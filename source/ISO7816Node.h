@@ -41,8 +41,10 @@ public:
     void SetEndSample(S64 endSample);
     S64 GetEndSample(void);
     sender_t GetSender(void);
+    void AddDescription(const char* str);
 
     void AddChildNode(ISO7816Node* child);
+    ISO7816Node* GetNodeAt(U64 index);
     ISO7816Node* GetFirstNode(void);
     ISO7816Node* GetLastNode(void);
     virtual nodeLevel_t GetLevel(void);
@@ -54,6 +56,7 @@ protected: //vars
     S64 mStartSample;
     S64 mEndSample;
     U64 mNodeId;
+    std::string mDescription;
     std::vector<ISO7816Node*> mChilds;
 };
 
@@ -92,7 +95,7 @@ public:
 class ISO7816NodeTPDU : public ISO7816Node
 {
 public:
-	ISO7816NodeTPDU(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	ISO7816NodeTPDU(S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
 	virtual ~ISO7816NodeTPDU();
 
 public:

@@ -1,5 +1,7 @@
 #include "ISO7816Node.h"
 
+#include <iostream>
+
 /*
  * ISO7816 Node abstract class implementation
  */
@@ -8,7 +10,8 @@ ISO7816Node::ISO7816Node(nodeLevel_t nodeLevel, sender_t sender, S64 startSample
     mNodeLevel(nodeLevel),
     mStartSample(startSample),
     mEndSample(endSample),
-    mNodeId(nodeId)
+    mNodeId(nodeId),
+    mDescription()
 {}
 
 ISO7816Node::~ISO7816Node()
@@ -55,6 +58,11 @@ nodeLevel_t ISO7816Node::GetLevel(void)
     return mNodeLevel;
 }
 
+ISO7816Node* ISO7816Node::GetNodeAt(U64 index)
+{
+    return mChilds.at(index);
+}
+
 ISO7816Node* ISO7816Node::GetFirstNode(void)
 {
     return mChilds.front();
@@ -66,8 +74,13 @@ ISO7816Node* ISO7816Node::GetLastNode(void)
 }
 
 void ISO7816Node::AddChildNode(ISO7816Node* child)
-{
+{				
     mChilds.push_back(child);
+}
+
+void ISO7816Node::AddDescription(const char* str)
+{
+    mDescription += str;
 }
 
 
@@ -106,8 +119,8 @@ void ISO7816NodeAPDU::GetDataStr(char* resultString, U32 maxStrLen)
 /*
  * ISO7816 Node for TPDU class definition
  */
-ISO7816NodeTPDU::ISO7816NodeTPDU(sender_t sender, S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(nodeLevel_tpdu, sender, startSample, endSample, nodeId)
+ISO7816NodeTPDU::ISO7816NodeTPDU(S64 startSample, S64 endSample, U64 nodeId)
+:   ISO7816Node(nodeLevel_tpdu, sender_undefined, startSample, endSample, nodeId)
 {}
 
 ISO7816NodeTPDU::~ISO7816NodeTPDU()
@@ -165,5 +178,12 @@ ISO7816NodeChar::~ISO7816NodeChar()
 
 void ISO7816NodeChar::GetDataStr(char* resultString, U32 maxStrLen)
 {
-    snprintf(resultString, maxStrLen, "0x%02X", mCharVal);
+    if (mDescription.empty())
+    {
+        snprintf(resultString, maxStrLen, "0x%02X", mCharVal);
+    }
+    else
+    {
+        snprintf(resultString, maxStrLen, "%s(0x%02X)", mDescription.c_str(), mCharVal);
+    }
 }
