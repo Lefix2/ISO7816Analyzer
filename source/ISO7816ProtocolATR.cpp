@@ -10,14 +10,15 @@
 
 
 ISO7816ProtocolATR::ISO7816ProtocolATR(ISO7816Analyzer* analyzer)
-:   ISO7816ProtocolLayer(analyzer)
+:   ISO7816ProtocolLayer(analyzer),
+    mNode(NULL)
 {
     initTransaction();
 }
 
 ISO7816ProtocolATR::~ISO7816ProtocolATR()
 {
-    
+    delete mNode;
 }
 
 void ISO7816ProtocolATR::initTransaction (void)
@@ -26,7 +27,8 @@ void ISO7816ProtocolATR::initTransaction (void)
     atr_init(&mATR);
     mTDi = 0;
     mNb_T = 0;
-    delete(mNode);
+    
+    delete mNode;
     mNode = new ISO7816NodeATR();
 }
 
@@ -97,7 +99,7 @@ void ISO7816ProtocolATR::newData(ISO7816Node* node)
             break;
 
         default:
-            throw ("Invalid ATR state");
+            throw ISO7816ExceptionProtocol("Invalid ATR state");
             break;
     }
     

@@ -14,21 +14,23 @@
 #define PPS_PPS1_D_MASK         0x0F
 
 ISO7816ProtocolPPS::ISO7816ProtocolPPS(ISO7816Analyzer* analyzer)
-:   ISO7816ProtocolLayer(analyzer)
+:   ISO7816ProtocolLayer(analyzer),
+    mNode(NULL)
 {
     initTransaction();
 }
 
 ISO7816ProtocolPPS::~ISO7816ProtocolPPS()
 {
-
+    delete mNode;
 }
 
 void ISO7816ProtocolPPS::initTransaction (void)
 {
     mStatePPS   = statePPS_PPSS;
-    delete(mNode);
     pps_init(&mPPS);
+    
+    delete mNode;
     mNode = new ISO7816NodePPS(sender_reader);
 }
 

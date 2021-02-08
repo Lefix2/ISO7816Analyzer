@@ -12,8 +12,8 @@ ISO7816Node::ISO7816Node(sender_t sender, S64 startSample, S64 endSample, U64 no
 
 ISO7816Node::~ISO7816Node()
 {
-    mChilds.empty();
 }
+
 void ISO7816Node::SetNodeId(U64 nodeId)
 {
     mNodeId = nodeId;
