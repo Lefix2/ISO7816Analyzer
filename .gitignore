@@ -1,5 +1,5 @@
-Debug/
-Release/
+debug/
+release/
 Debug-Legacy-1.1.14/
 *.VC.db
 *.VC.opendb
