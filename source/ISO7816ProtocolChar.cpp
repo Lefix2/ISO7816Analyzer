@@ -5,7 +5,8 @@
 ISO7816ProtocolChar::ISO7816ProtocolChar(ISO7816Analyzer* analyzer )
 :   ISO7816ProtocolLayer(analyzer),
     mProtocolAtr(analyzer),
-    mProtocolPPS(analyzer)
+    mProtocolPPS(analyzer),
+    mProtocolTPDUT0(analyzer)
 {
     initTransaction();
 }
@@ -22,6 +23,7 @@ void ISO7816ProtocolChar::initTransaction( void )
     // Close everything
     mProtocolAtr.initTransaction();
     mProtocolPPS.initTransaction();
+    mProtocolTPDUT0.initTransaction();
 }
 
 bool ISO7816ProtocolChar::isTransactionComplete( void )
@@ -46,6 +48,7 @@ void ISO7816ProtocolChar::newData(ISO7816Node* node)
             break;
 
         case S_T0:
+            mProtocolTPDUT0.newData(node);
             break;
 
         case S_T1:
