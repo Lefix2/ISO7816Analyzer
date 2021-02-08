@@ -190,6 +190,7 @@ void pps_init(pps_t* pps);
 
 void iso_params_init (iso_params_t *params);
 
+U32 GetfMax(U8 F);
 U16 GetFn(U8 F);
 U16 GetDn(U8 D);
 

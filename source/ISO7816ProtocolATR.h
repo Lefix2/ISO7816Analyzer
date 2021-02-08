@@ -29,6 +29,17 @@ public:
 
 protected: // functions
     void nextTDState(void);
+    sc_convention_t GetGlobalConvention(void);
+    U32 GetGlobalfMax(void);
+    U32 GetGlobalFi(void);
+    U32 GetGlobalDi(void);
+    U8  GetGlobalN(void);
+    U8  GetGlobalWI(void);
+    U8  GetT1SpecificEDC(void);
+    U8  GetT1SpecificIFS(void);
+    U8  GetT1SpecificCWI(void);
+    U8  GetT1SpecificBWI(void);
+    void decodeATR(void);
 
 protected: //vars
     stateATR_t      mStateATR;

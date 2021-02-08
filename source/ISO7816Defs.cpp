@@ -71,6 +71,11 @@ void iso_params_init (iso_params_t *params)
 
 }
 
+U32 GetfMax(U8 F)
+{
+	return fmax_table[F];
+}
+
 U16 GetFn(U8 F)
 {
 	return f_table[F];
