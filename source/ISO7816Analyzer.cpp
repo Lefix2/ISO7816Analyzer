@@ -176,10 +176,14 @@ void ISO7816Analyzer::WorkerThread()
 				std::cout << "Exception catched while building protocol : " << e.GetDetails() << std::endl;
 				continue;
 			}
+			catch(ISO7816ExceptionExecution e)
+			{
+				std::cout << "Exception catched : " << e.GetDetails() << std::endl;
+				exit(1);
+			}
 
 			ReportProgress( mIO->GetSampleNumber());
 		}
-
 		std::cout << "End of ISO transmission" << std::endl;
 	}
 }
