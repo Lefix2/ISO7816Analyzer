@@ -109,7 +109,7 @@ nodeLevel_t ISO7816NodePPS::GetLevel(void)
 
 void ISO7816NodePPS::GetDataStr(char* resultString, U32 maxStrLen)
 {
-    snprintf(resultString, maxStrLen, "PPS %s", mSender==sender_reader?"request":"response");
+    snprintf(resultString, maxStrLen, "PPS");
 }
 
 

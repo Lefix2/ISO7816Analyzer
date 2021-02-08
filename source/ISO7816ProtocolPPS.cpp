@@ -86,10 +86,6 @@ void ISO7816ProtocolPPS::newData(ISO7816Node* node)
     if (mStatePPS == statePPS_finished)
     {
         // Give node to analyzer
-        mNode->SetStartSample(mNode->GetFirstNode()->GetStartSample());
-        mNode->SetEndSample(mNode->GetLastNode()->GetEndSample());
-        mAnalyzer->newFrame(mNode);
-        mNode = NULL;
 
         // Toggle transmission direction
         sender = mAnalyzer->GetContext()->toggleSender();
@@ -98,12 +94,15 @@ void ISO7816ProtocolPPS::newData(ISO7816Node* node)
         if(sender == sender_card)
         {
             mStatePPS = statePPS_PPSS;
-            mNode = new ISO7816NodePPS(sender);
         }
         // Else update transaction parameters
         else
         {
             decodePPS();
+            mNode->SetStartSample(mNode->GetFirstNode()->GetStartSample());
+            mNode->SetEndSample(mNode->GetLastNode()->GetEndSample());
+            mAnalyzer->newFrame(mNode);
+            mNode = NULL;
         }
     }
 }
