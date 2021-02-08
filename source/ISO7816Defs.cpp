@@ -51,6 +51,7 @@ void iso_params_init (iso_params_t *params)
 	params->default_protocol= 0;
 
 	atr_init(&(params->ATR));
+	pps_init(&(params->PPS));
 
 	params->F				= ATR_DEFAULT_F;
 	params->D				= ATR_DEFAULT_D;

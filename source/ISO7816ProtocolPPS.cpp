@@ -28,7 +28,7 @@ ISO7816ProtocolPPS::~ISO7816ProtocolPPS()
 void ISO7816ProtocolPPS::initTransaction (void)
 {
     mStatePPS   = statePPS_PPSS;
-    pps_init(&mPPS);
+    pps_init(&mAnalyzer->GetContext()->mISOParams.PPS);
     
     delete mNode;
     mNode = new ISO7816NodePPS(sender_reader);
@@ -42,6 +42,7 @@ bool ISO7816ProtocolPPS::isTransactionComplete(void)
 void ISO7816ProtocolPPS::newData(ISO7816Node* node)
 {
     sender_t sender = mAnalyzer->GetContext()->GetSender();
+    pps_t &pps = mAnalyzer->GetContext()->mISOParams.PPS;
 
     mNode->AddChildNode(node);
 
@@ -55,27 +56,27 @@ void ISO7816ProtocolPPS::newData(ISO7816Node* node)
         case statePPS_PPSS:
             if (data != PPS_PPSS_VALUE)
                 throw ISO7816ExceptionProtocol("Invalid PPSS command");
-            mPPS.PPSS = data;
+            pps.PPSS = data;
             break;
         
         case statePPS_PPS0:
-            mPPS.PPS0 = data;
+            pps.PPS0 = data;
             break;
         
         case statePPS_PPS1:
-            mPPS.PPS1 = data;
+            pps.PPS1 = data;
             break;
         
         case statePPS_PPS2:
-            mPPS.PPS2 = data;
+            pps.PPS2 = data;
             break;
         
         case statePPS_PPS3:
-            mPPS.PPS3 = data;
+            pps.PPS3 = data;
             break;
         
         case statePPS_PCK:
-            mPPS.PCK = data;
+            pps.PCK = data;
             break;
         
         default:
@@ -123,6 +124,8 @@ bool ISO7816ProtocolPPS::isPPSStartingWithData(U8 data)
 
 void ISO7816ProtocolPPS::nextState(void)
 {
+    pps_t &pps = mAnalyzer->GetContext()->mISOParams.PPS;
+
     switch(mStatePPS)
     {
         case statePPS_PPSS:
@@ -131,7 +134,7 @@ void ISO7816ProtocolPPS::nextState(void)
             // nobreak
         
         case statePPS_PPS0:
-            if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS1_MASK))
+            if(GETBIT(pps.PPS0,PPS_PPS0_PPS1_MASK))
             {
                 mStatePPS = statePPS_PPS1;
                 return;
@@ -139,7 +142,7 @@ void ISO7816ProtocolPPS::nextState(void)
             // nobreak
         
         case statePPS_PPS1:
-            if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS2_MASK))
+            if(GETBIT(pps.PPS0,PPS_PPS0_PPS2_MASK))
             {
                 mStatePPS = statePPS_PPS2;
                 return;
@@ -147,7 +150,7 @@ void ISO7816ProtocolPPS::nextState(void)
             // nobreak
         
         case statePPS_PPS2:
-            if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS3_MASK))
+            if(GETBIT(pps.PPS0,PPS_PPS0_PPS3_MASK))
             {
                 mStatePPS = statePPS_PPS3;
                 return;
@@ -172,24 +175,26 @@ void ISO7816ProtocolPPS::nextState(void)
 
 void ISO7816ProtocolPPS::decodePPS(void)
 {
-    mAnalyzer->GetContext()->mISOParams.default_protocol = GETVAL(mPPS.PPS0, PPS_PPS0_PROT_MASK,PPS_PPS0_PROT_OFF);
+    pps_t &pps = mAnalyzer->GetContext()->mISOParams.PPS;
+
+    mAnalyzer->GetContext()->mISOParams.default_protocol = GETVAL(pps.PPS0, PPS_PPS0_PROT_MASK,PPS_PPS0_PROT_OFF);
     
-    if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS1_MASK))
+    if(GETBIT(pps.PPS0,PPS_PPS0_PPS1_MASK))
     {
-        mAnalyzer->GetContext()->mISOParams.F = GetFn(GETVAL(mPPS.PPS1, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF));
-        mAnalyzer->GetContext()->mISOParams.D = GetDn(GETVAL(mPPS.PPS1, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF));
+        mAnalyzer->GetContext()->mISOParams.F = GetFn(GETVAL(pps.PPS1, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF));
+        mAnalyzer->GetContext()->mISOParams.D = GetDn(GETVAL(pps.PPS1, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF));
     }
     
-    if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS2_MASK))
+    if(GETBIT(pps.PPS0,PPS_PPS0_PPS2_MASK))
     {
-        if (mPPS.PPS2 != 0x00)
+        if (pps.PPS2 != 0x00)
         {
             mAnalyzer->GetContext()->mISOParams.SPU.present = true;
         }
-        mAnalyzer->GetContext()->mISOParams.SPU.value = mPPS.PPS2; 
+        mAnalyzer->GetContext()->mISOParams.SPU.value = pps.PPS2; 
     }
     
-    if(GETBIT(mPPS.PPS0,PPS_PPS0_PPS3_MASK))
+    if(GETBIT(pps.PPS0,PPS_PPS0_PPS3_MASK))
     {
         // RFU
     }

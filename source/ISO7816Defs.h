@@ -160,6 +160,7 @@ typedef struct {
 	U8				default_protocol;
 
 	atr_t			ATR;
+	pps_t			PPS;
 
 	U32				F;
 	U32				D;

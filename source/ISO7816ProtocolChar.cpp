@@ -68,7 +68,13 @@ void ISO7816ProtocolChar::nextState(U8 data)
                 if(mProtocolPPS.isPPSStartingWithData(data))
                     mAnalyzer->GetContext()->mState = S_PPS;
                 else
-                    switch (mAnalyzer->GetContext()->mISOParams.default_protocol)
+                {
+                    iso_params_t &params = mAnalyzer->GetContext()->mISOParams;
+
+                    params.F = params.Fi;
+                    params.D = params.Di;
+                    
+                    switch (params.default_protocol)
                     {
                         case SC_PROTOCOL_T0:
                             mAnalyzer->GetContext()->mState = S_T0;
@@ -82,6 +88,7 @@ void ISO7816ProtocolChar::nextState(U8 data)
                             mAnalyzer->GetContext()->mState = S_NUMBER_OR_INVALID;
                             break;
                     }
+                }
             break;
 
         case S_PPS:
@@ -103,9 +110,11 @@ void ISO7816ProtocolChar::nextState(U8 data)
             break;
 
         case S_T0:
+            // Stay in T0
             break;
 
         case S_T1:
+            // Stay in T1
             break;
 
         default:

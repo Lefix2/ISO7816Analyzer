@@ -34,7 +34,6 @@ protected: // functions
 
 protected: //vars
     statePPS_t      mStatePPS;
-    pps_t           mPPS;
     ISO7816NodePPS* mNode;
 };
 

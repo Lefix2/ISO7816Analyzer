@@ -43,7 +43,6 @@ protected: // functions
 
 protected: //vars
     stateATR_t      mStateATR;
-    atr_t           mATR;
     U8              mTDi;
     U8              mNb_T;
     ISO7816NodeATR* mNode;
