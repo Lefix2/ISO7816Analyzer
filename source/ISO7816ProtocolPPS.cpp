@@ -41,12 +41,14 @@ bool ISO7816ProtocolPPS::isTransactionComplete(void)
 
 void ISO7816ProtocolPPS::newData(ISO7816Node* node)
 {
+    ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>(node);
+    if(charNode == NULL) throw ISO7816ExceptionExecution("NullPtr cast");
     sender_t sender = mAnalyzer->GetContext()->GetSender();
     pps_t &pps = mAnalyzer->GetContext()->mISOParams.PPS;
 
     mNode->AddChildNode(node);
 
-    U8 &data = (dynamic_cast<ISO7816NodeChar*>(node))->mCharVal;
+    U8 &data = charNode->mCharVal;
 
     if( (sender != sender_card) && (sender != sender_reader))
         throw ISO7816ExceptionProtocol("Invalid sender state for current context in PPS");
@@ -56,26 +58,32 @@ void ISO7816ProtocolPPS::newData(ISO7816Node* node)
         case statePPS_PPSS:
             if (data != PPS_PPSS_VALUE)
                 throw ISO7816ExceptionProtocol("Invalid PPSS command");
+            charNode->AddDescription("PPSS");
             pps.PPSS = data;
             break;
         
         case statePPS_PPS0:
+            charNode->AddDescription("PPS0");
             pps.PPS0 = data;
             break;
         
         case statePPS_PPS1:
+            charNode->AddDescription("PPS1");
             pps.PPS1 = data;
             break;
         
         case statePPS_PPS2:
+            charNode->AddDescription("PPS2");
             pps.PPS2 = data;
             break;
         
         case statePPS_PPS3:
+            charNode->AddDescription("PPS3");
             pps.PPS3 = data;
             break;
         
         case statePPS_PCK:
+            charNode->AddDescription("PCK");
             pps.PCK = data;
             break;
         

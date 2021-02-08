@@ -45,7 +45,10 @@ bool ISO7816ProtocolATR::isTransactionComplete(void)
 
 void ISO7816ProtocolATR::newData(ISO7816Node* node)
 {
-    U8 &data = (dynamic_cast<ISO7816NodeChar*>(node))->mCharVal;
+    char charDesc[5];
+    ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>(node);
+    if(charNode == NULL) throw ISO7816ExceptionExecution("NullPtr cast");
+    U8 &data = charNode->mCharVal;
     atr_t &atr = mAnalyzer->GetContext()->mISOParams.ATR;
 
     mNode->AddChildNode(node);
@@ -64,31 +67,41 @@ void ISO7816ProtocolATR::newData(ISO7816Node* node)
             {
                 throw ISO7816ExceptionProtocol("Bad TS");
             }
+            charNode->AddDescription("TS");
             atr.TS = data;
             break;
 
         case stateATR_T0:
+            charNode->AddDescription("T0");
             atr.T0 = data;
             mTDi    = data;
             mNb_T   = 0;
             break;
 
         case stateATR_TA:
+            sprintf(charDesc,"TA%d", mNb_T);
+            charNode->AddDescription(charDesc);
 			atr.T[mNb_T][ATR_INTERFACE_A].present	= true;
 			atr.T[mNb_T][ATR_INTERFACE_A].value    = data;
             break;
 
         case stateATR_TB:
+            sprintf(charDesc,"TB%d", mNb_T);
+            charNode->AddDescription(charDesc);
 			atr.T[mNb_T][ATR_INTERFACE_B].present	= true;
 			atr.T[mNb_T][ATR_INTERFACE_B].value    = data;
             break;
 
         case stateATR_TC:
+            sprintf(charDesc,"TC%d", mNb_T);
+            charNode->AddDescription(charDesc);
 			atr.T[mNb_T][ATR_INTERFACE_C].present	= true;
 			atr.T[mNb_T][ATR_INTERFACE_C].value    = data;
             break;
 
         case stateATR_TD:
+            sprintf(charDesc,"TD%d", mNb_T);
+            charNode->AddDescription(charDesc);
 			atr.T[mNb_T][ATR_INTERFACE_D].present	= true;
 			atr.T[mNb_T][ATR_INTERFACE_D].value    = data;
             mNb_T++;
@@ -102,6 +115,7 @@ void ISO7816ProtocolATR::newData(ISO7816Node* node)
             break;
 
         case stateATR_TCK:
+            charNode->AddDescription("TCK");
             atr.TCK.value = data;
             break;
 
