@@ -7,7 +7,7 @@ ISO7816ProtocolChar::ISO7816ProtocolChar(ISO7816Analyzer* analyzer )
     mProtocolAtr(analyzer),
     mProtocolPPS(analyzer)
 {
-
+    initTransaction();
 }
 
 ISO7816ProtocolChar::~ISO7816ProtocolChar()

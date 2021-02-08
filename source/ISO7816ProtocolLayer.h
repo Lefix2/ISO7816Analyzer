@@ -8,12 +8,12 @@
 class ISO7816ProtocolLayer
 {
 public:
-	ISO7816ProtocolLayer(ISO7816Analyzer* analyzer);
-	virtual ~ISO7816ProtocolLayer();
+	ISO7816ProtocolLayer(ISO7816Analyzer* analyzer) : mAnalyzer(analyzer){};
+	virtual ~ISO7816ProtocolLayer()             = 0;
 
-    virtual void initTransaction (void);
-    virtual bool isTransactionComplete(void);
-    virtual void newData(ISO7816Node* node) = 0;
+    virtual void initTransaction (void)         = 0;
+    virtual bool isTransactionComplete(void)    = 0;
+    virtual void newData(ISO7816Node* node)     = 0;
 
 protected: // functions
 
