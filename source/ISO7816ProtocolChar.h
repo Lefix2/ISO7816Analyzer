@@ -3,6 +3,7 @@
 
 #include "ISO7816ProtocolLayer.h"
 #include "ISO7816ProtocolATR.h"
+#include "ISO7816ProtocolPPS.h"
 
 class ISO7816ProtocolChar : public ISO7816ProtocolLayer
 {
@@ -15,9 +16,11 @@ public:
     virtual void newData(ISO7816Node* node);
 
 protected: // functions
+    void nextState(U8 data);
 
 protected: //vars
     ISO7816ProtocolATR mProtocolAtr;
+    ISO7816ProtocolPPS mProtocolPPS;
 };
 
 #endif //ISO7816_PROTOCOLCHAR_H

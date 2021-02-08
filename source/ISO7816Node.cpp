@@ -1,11 +1,14 @@
 #include "ISO7816Node.h"
 
-ISO7816Node::ISO7816Node(S64 startSample, S64 endSample, U64 nodeId)
-:   mStartSample(startSample),
+/*
+ * ISO7816 Node abstract class implementation
+ */
+ISO7816Node::ISO7816Node(sender_t sender, S64 startSample, S64 endSample, U64 nodeId)
+:   mSender(sender),
+    mStartSample(startSample),
     mEndSample(endSample),
     mNodeId(nodeId)
-{
-}
+{}
 
 ISO7816Node::~ISO7816Node()
 {
@@ -41,6 +44,11 @@ S64 ISO7816Node::GetEndSample(void)
     return mEndSample;
 }
 
+sender_t ISO7816Node::GetSender(void)
+{
+    return mSender;
+}
+
 nodeLevel_t ISO7816Node::GetLevel(void)
 {
     return nodeLevel_count_or_invalid;
@@ -62,8 +70,11 @@ void ISO7816Node::AddChildNode(ISO7816Node* child)
 }
 
 
+/*
+ * ISO7816 Node for Transaction class implementation
+ */
 ISO7816NodeTransaction::ISO7816NodeTransaction(S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(startSample, endSample, nodeId)
+:   ISO7816Node(sender_undefined, startSample, endSample, nodeId)
 {}
 
 ISO7816NodeTransaction::~ISO7816NodeTransaction()
@@ -80,11 +91,34 @@ void ISO7816NodeTransaction::GetDataStr(char* resultString, U32 maxStrLen)
 }
 
 
-ISO7816NodeATR::ISO7816NodeATR(S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(startSample, endSample, nodeId)
-{
 
+/*
+ * ISO7816 Node for PPS class implementation
+ */
+ISO7816NodePPS::ISO7816NodePPS(sender_t sender, S64 startSample, S64 endSample, U64 nodeId)
+:   ISO7816Node(sender, startSample, endSample, nodeId)
+{}
+
+ISO7816NodePPS::~ISO7816NodePPS()
+{}
+
+nodeLevel_t ISO7816NodePPS::GetLevel(void)
+{
+    return nodeLevel_pps;
 }
+
+void ISO7816NodePPS::GetDataStr(char* resultString, U32 maxStrLen)
+{
+    snprintf(resultString, maxStrLen, "PPS %s", mSender==sender_reader?"request":"response");
+}
+
+
+/*
+ * ISO7816 Node for ATR class implementation
+ */
+ISO7816NodeATR::ISO7816NodeATR(S64 startSample, S64 endSample, U64 nodeId)
+:   ISO7816Node(sender_card, startSample, endSample, nodeId)
+{}
 
 ISO7816NodeATR::~ISO7816NodeATR()
 {}
@@ -100,12 +134,13 @@ void ISO7816NodeATR::GetDataStr(char* resultString, U32 maxStrLen)
 }
 
 
-ISO7816NodeChar::ISO7816NodeChar(U8 charVal, S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(startSample, endSample, nodeId),
+/*
+ * ISO7816 Node for character class implementation
+ */
+ISO7816NodeChar::ISO7816NodeChar(sender_t sender, U8 charVal, S64 startSample, S64 endSample, U64 nodeId)
+:   ISO7816Node(sender, startSample, endSample, nodeId),
     mCharVal(charVal)
-{
-
-}
+{}
 
 ISO7816NodeChar::~ISO7816NodeChar()
 {}

@@ -16,10 +16,21 @@ typedef enum{
     nodeLevel_count_or_invalid,
 }nodeLevel_t;
 
+typedef enum
+{
+	sender_card,
+	sender_reader,
+	sender_undefined,
+	sender_count_or_invalid
+}sender_t;
+
+/*
+ * ISO7816 Node abstract class definition
+ */
 class ISO7816Node
 {
 public:
-	ISO7816Node(S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	ISO7816Node(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
 	virtual ~ISO7816Node();
 
 public:
@@ -29,6 +40,7 @@ public:
     S64 GetStartSample(void);
     void SetEndSample(S64 endSample);
     S64 GetEndSample(void);
+    sender_t GetSender(void);
 
     void AddChildNode(ISO7816Node* child);
     ISO7816Node* GetFirstNode(void);
@@ -37,12 +49,17 @@ public:
     virtual void GetDataStr(char* resultString, U32 maxStrLen) = 0;
 
 protected: //vars
+    sender_t mSender;
     S64 mStartSample;
     S64 mEndSample;
     U64 mNodeId;
     std::vector<ISO7816Node*> mChilds;
 };
 
+
+/*
+ * ISO7816 Node for transaction class definition
+ */
 class ISO7816NodeTransaction : public ISO7816Node
 {
 public:
@@ -54,6 +71,25 @@ public:
     void GetDataStr(char* resultString, U32 maxStrLen);
 };
 
+
+/*
+ * ISO7816 Node for PPS class definition
+ */
+class ISO7816NodePPS : public ISO7816Node
+{
+public:
+	ISO7816NodePPS(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	virtual ~ISO7816NodePPS();
+
+public:
+    nodeLevel_t GetLevel(void);
+    void GetDataStr(char* resultString, U32 maxStrLen);
+};
+
+
+/*
+ * ISO7816 Node for ATR class definition
+ */
 class ISO7816NodeATR : public ISO7816Node
 {
 public:
@@ -65,10 +101,14 @@ public:
     void GetDataStr(char* resultString, U32 maxStrLen);
 };
 
+
+/*
+ * ISO7816 Node for character class definition
+ */
 class ISO7816NodeChar : public ISO7816Node
 {
 public:
-    ISO7816NodeChar(U8 charVal, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+    ISO7816NodeChar(sender_t sender, U8 charVal, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
     virtual ~ISO7816NodeChar();
 
 public:

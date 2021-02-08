@@ -4,12 +4,8 @@
 #include <LogicPublicTypes.h>
 
 #include "ISO7816Exception.h"
-
-typedef enum {
-    CONV_DIR,
-    CONV_INV,
-    CONV_NUMBER_OR_INVALID
-}convention_t;
+#include "ISO7816Defs.h"
+#include "ISO7816Node.h"
 
 typedef enum {
     S_ATR,
@@ -26,13 +22,16 @@ public:
 	virtual ~ISO7816Context();
 
     void init(void);
+    sender_t toggleSender(void);
+
+    sender_t GetSender(void);
 
 public: //vars
-    convention_t    mConvention;
+    iso_params_t    mISOParams;
     state_t         mState;
 
-    U64             mF;
-    U64             mD;
+private: //vars
+    sender_t        mCurrSender;
 };
 
 #endif //ISO7816_CONTEXT_H

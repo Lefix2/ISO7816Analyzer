@@ -81,7 +81,7 @@ void ISO7816Analyzer::SyncToSample(U64 to_sample)
 
 void ISO7816Analyzer::AdvanceEtu(double etu)
 {
-	U64 nbEdges = (((double)(mContext->mF)/(double)(mContext->mD))*etu)*2;
+	U64 nbEdges = (((double)(mContext->mISOParams.F)/(double)(mContext->mISOParams.D))*etu)*2;
 
 	for (U64 i = 0; i < nbEdges; i++)
 	{
@@ -125,7 +125,7 @@ void ISO7816Analyzer::WorkerThread()
 		// Decode char until reset
 		while(1)
 		{
-			word.Reset(&data, mContext->mConvention==CONV_DIR? AnalyzerEnums::LsbFirst:AnalyzerEnums::MsbFirst, 8);
+			word.Reset(&data, mContext->mISOParams.convention == convention_direct? AnalyzerEnums::LsbFirst:AnalyzerEnums::MsbFirst, 8);
 
 			// Check that a reset don't happen
 			if ( mRST->WouldAdvancingToAbsPositionCauseTransition(mIO->GetSampleOfNextEdge()))
@@ -149,7 +149,7 @@ void ISO7816Analyzer::WorkerThread()
 				// Mark data (dot)
 				mResults->AddMarker( mIO->GetSampleNumber(), AnalyzerResults::Dot, mSettings->mChannelIO );
 
-				word.AddBit(mContext->mConvention==CONV_DIR?mIO->GetBitState():mIO->GetBitState()==BIT_HIGH?BIT_LOW:BIT_HIGH);
+				word.AddBit(mContext->mISOParams.convention == convention_direct?mIO->GetBitState():mIO->GetBitState()==BIT_HIGH?BIT_LOW:BIT_HIGH);
 			}
 
 			// Parity bit
@@ -166,13 +166,21 @@ void ISO7816Analyzer::WorkerThread()
 			else
 				mResults->AddMarker( mIO->GetSampleNumber(), AnalyzerResults::Stop, mSettings->mChannelIO );
 
-			// Todo add errors flags to data
-			protocolChar->newData(new ISO7816NodeChar(data, starting_sample, mIO->GetSampleNumber()));
+			try
+			{
+				// Todo add errors flags to data
+				protocolChar->newData(new ISO7816NodeChar(mContext->GetSender(), data, starting_sample, mIO->GetSampleNumber()));
+			}
+			catch(ISO7816ExceptionProtocol e)
+			{
+				std::cout << "Exception catched while building protocol : " << e.GetDetails() << std::endl;
+				continue;
+			}
 
 			ReportProgress( mIO->GetSampleNumber());
 		}
 
-		std::cout << "End of transmission" << std::endl;
+		std::cout << "End of ISO transmission" << std::endl;
 	}
 }
 
