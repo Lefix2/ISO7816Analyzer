@@ -71,8 +71,9 @@ void ISO7816SimulationDataGenerator::Initialize( U32 simulation_sample_rate, ISO
 U32 ISO7816SimulationDataGenerator::GenerateSimulationData( U64 largest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channel )
 {
 	U64 adjusted_largest_sample_requested = AnalyzerHelpers::AdjustSimulationTargetSample( largest_sample_requested, sample_rate, mSimulationSampleRateHz );
-	U64 current_sample = 0;
+	//U64 current_sample = 0;
 	U8 char_value = 0;
+	(void)adjusted_largest_sample_requested;
 
 	mEtu = 372;
 	mCLKGenerator.Init(4000000, sample_rate);
@@ -115,7 +116,7 @@ U32 ISO7816SimulationDataGenerator::GenerateSimulationData( U64 largest_sample_r
 	while( char_value != 0xFF )
 	{
 		GenerateChar((char_value++) & 0xFF);
-		current_sample = mSimulationDataCLK->GetCurrentSampleNumber();
+		//current_sample = mSimulationDataCLK->GetCurrentSampleNumber();
 	}
 
 	*simulation_channel = mSimulationChannelsISO7816.GetArray();

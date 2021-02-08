@@ -2,6 +2,7 @@
 #include <AnalyzerHelpers.h>
 #include "ISO7816Analyzer.h"
 #include "ISO7816AnalyzerSettings.h"
+#include "ISO7816Node.h"
 #include <iostream>
 #include <fstream>
 
@@ -19,30 +20,39 @@ ISO7816AnalyzerResults::~ISO7816AnalyzerResults()
 void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel, DisplayBase display_base )
 {
 	ClearResultStrings();
-	Frame frame = GetFrame( frame_index );
+	char dataStr[256];
+	ISO7816Node* node = mAnalyzer->GetNodeByFrameId(frame_index);
+
+	node->GetDataStr(dataStr, sizeof(dataStr));
 
 	if (channel == mSettings->mChannelVCC)
 	{
-		AddResultString( "VCC frame" );
+		if (node->GetLevel() == nodeLevel_transaction)
+			AddResultString(dataStr);
 	}
 	else if (channel == mSettings->mChannelRST)
 	{
-		AddResultString( "RST frame" );
+		if (node->GetLevel() == nodeLevel_apdu)
+			AddResultString(dataStr);
 	}
 	else if (channel == mSettings->mChannelCLK)
 	{
-		AddResultString( "CLK frame" );
+		if ((node->GetLevel() == nodeLevel_atr) ||
+			(node->GetLevel() == nodeLevel_pps)	||
+			(node->GetLevel() == nodeLevel_tpdu))
+			AddResultString(dataStr);
 	}
 	else if (channel == mSettings->mChannelIO)
 	{
-		char number_str[128];
-		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
-		AddResultString( number_str );
+		if (node->GetLevel() == nodeLevel_char)
+			AddResultString(dataStr);
 	}
 }
 
 void ISO7816AnalyzerResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 export_type_user_id )
 {
+	(void)export_type_user_id;
+
 	std::ofstream file_stream( file, std::ios::out );
 
 	U64 trigger_sample = mAnalyzer->GetTriggerSample();
@@ -76,22 +86,33 @@ void ISO7816AnalyzerResults::GenerateExportFile( const char* file, DisplayBase d
 void ISO7816AnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
 #ifdef SUPPORTS_PROTOCOL_SEARCH
+	char dataStr[64];
+	ISO7816Node* node = mAnalyzer->GetNodeByFrameId(frame_index);
+
+	node->GetDataStr(dataStr, sizeof(dataStr));
+
 	Frame frame = GetFrame( frame_index );
 	ClearTabularText();
-
-	char number_str[128];
-	AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
-	AddTabularText( number_str );
+	
+	// @TODO for now only display char
+	if(node->GetLevel() == nodeLevel_char)
+		AddTabularText( dataStr );
+#else
+	(void)frame_index;
+	(void)DisplayBase;
 #endif
 }
 
 void ISO7816AnalyzerResults::GeneratePacketTabularText( U64 packet_id, DisplayBase display_base )
 {
+	(void)packet_id;
+	(void)display_base;
 	//not supported
-
 }
 
 void ISO7816AnalyzerResults::GenerateTransactionTabularText( U64 transaction_id, DisplayBase display_base )
 {
+	(void)transaction_id;
+	(void)display_base;
 	//not supported
 }

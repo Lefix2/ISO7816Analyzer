@@ -24,10 +24,10 @@ public:
 	double mEtu;
 
 protected:
-	std::auto_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceVCC;
-	std::auto_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceRST;
-	std::auto_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceCLK;
-	std::auto_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceIO;
+	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceVCC;
+	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceRST;
+	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceCLK;
+	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceIO;
 };
 
 #endif //ISO7816_ANALYZER_SETTINGS
