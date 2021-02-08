@@ -30,7 +30,7 @@ typedef enum
 class ISO7816Node
 {
 public:
-	ISO7816Node(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	ISO7816Node(nodeLevel_t nodeLevel, sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
 	virtual ~ISO7816Node();
 
 public:
@@ -49,6 +49,7 @@ public:
     virtual void GetDataStr(char* resultString, U32 maxStrLen) = 0;
 
 protected: //vars
+    const nodeLevel_t mNodeLevel;
     sender_t mSender;
     S64 mStartSample;
     S64 mEndSample;
@@ -67,7 +68,34 @@ public:
 	virtual ~ISO7816NodeTransaction();
 
 public:
-    nodeLevel_t GetLevel(void);
+    void GetDataStr(char* resultString, U32 maxStrLen);
+};
+
+
+/*
+ * ISO7816 Node for APDU class definition
+ */
+class ISO7816NodeAPDU : public ISO7816Node
+{
+public:
+	ISO7816NodeAPDU(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	virtual ~ISO7816NodeAPDU();
+
+public:
+    void GetDataStr(char* resultString, U32 maxStrLen);
+};
+
+
+/*
+ * ISO7816 Node for TPDU class definition
+ */
+class ISO7816NodeTPDU : public ISO7816Node
+{
+public:
+	ISO7816NodeTPDU(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	virtual ~ISO7816NodeTPDU();
+
+public:
     void GetDataStr(char* resultString, U32 maxStrLen);
 };
 
@@ -82,7 +110,6 @@ public:
 	virtual ~ISO7816NodePPS();
 
 public:
-    nodeLevel_t GetLevel(void);
     void GetDataStr(char* resultString, U32 maxStrLen);
 };
 
@@ -97,7 +124,6 @@ public:
 	virtual ~ISO7816NodeATR();
 
 public:
-    nodeLevel_t GetLevel(void);
     void GetDataStr(char* resultString, U32 maxStrLen);
 };
 
@@ -112,7 +138,6 @@ public:
     virtual ~ISO7816NodeChar();
 
 public:
-    nodeLevel_t GetLevel(void);
     void GetDataStr(char* resultString, U32 maxStrLen);
 
 public:
