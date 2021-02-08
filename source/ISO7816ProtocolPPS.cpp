@@ -1,5 +1,7 @@
 #include "ISO7816ProtocolPPS.h"
 
+#include "ISO7816Exception.h"
+
 #define PPS_PPSS_VALUE          0xFF
 
 #define PPS_PPS0_PROT_OFF       0
@@ -29,7 +31,7 @@ void ISO7816ProtocolPPS::initTransaction (void)
 {
     mStatePPS   = statePPS_PPSS;
     pps_init(&mAnalyzer->GetContext()->mISOParams.PPS);
-    
+
     delete mNode;
     mNode = new ISO7816NodePPS(sender_reader);
 }
@@ -61,37 +63,37 @@ void ISO7816ProtocolPPS::newData(ISO7816Node* node)
             charNode->AddDescription("PPSS");
             pps.PPSS = data;
             break;
-        
+
         case statePPS_PPS0:
             charNode->AddDescription("PPS0");
             pps.PPS0 = data;
             break;
-        
+
         case statePPS_PPS1:
             charNode->AddDescription("PPS1");
             pps.PPS1 = data;
             break;
-        
+
         case statePPS_PPS2:
             charNode->AddDescription("PPS2");
             pps.PPS2 = data;
             break;
-        
+
         case statePPS_PPS3:
             charNode->AddDescription("PPS3");
             pps.PPS3 = data;
             break;
-        
+
         case statePPS_PCK:
             charNode->AddDescription("PCK");
             pps.PCK = data;
             break;
-        
+
         default:
             throw ISO7816ExceptionProtocol("Invalid PPS state");
             break;
     }
-    
+
     nextState();
 
     if (mStatePPS == statePPS_finished)
@@ -124,9 +126,9 @@ bool ISO7816ProtocolPPS::isPPSStartingWithData(U8 data)
         (mStatePPS == statePPS_PPSS) &&
         (data == PPS_PPSS_VALUE))
     {
-        return true;   
+        return true;
     }
-    
+
     return false;
 }
 
@@ -140,7 +142,7 @@ void ISO7816ProtocolPPS::nextState(void)
             mStatePPS = statePPS_PPS0;
             return;
             // nobreak
-        
+
         case statePPS_PPS0:
             if(GETBIT(pps.PPS0,PPS_PPS0_PPS1_MASK))
             {
@@ -148,7 +150,7 @@ void ISO7816ProtocolPPS::nextState(void)
                 return;
             }
             // nobreak
-        
+
         case statePPS_PPS1:
             if(GETBIT(pps.PPS0,PPS_PPS0_PPS2_MASK))
             {
@@ -156,7 +158,7 @@ void ISO7816ProtocolPPS::nextState(void)
                 return;
             }
             // nobreak
-        
+
         case statePPS_PPS2:
             if(GETBIT(pps.PPS0,PPS_PPS0_PPS3_MASK))
             {
@@ -164,17 +166,17 @@ void ISO7816ProtocolPPS::nextState(void)
                 return;
             }
             // nobreak
-        
+
         case statePPS_PPS3:
             mStatePPS = statePPS_PCK;
             return;
             // nobreak
-        
+
         case statePPS_PCK:
             mStatePPS = statePPS_finished;
             return;
             // nobreak
-        
+
         default:
             throw ISO7816ExceptionProtocol("Invalid PPS state");
             // nobreak
@@ -186,22 +188,22 @@ void ISO7816ProtocolPPS::decodePPS(void)
     pps_t &pps = mAnalyzer->GetContext()->mISOParams.PPS;
 
     mAnalyzer->GetContext()->mISOParams.default_protocol = GETVAL(pps.PPS0, PPS_PPS0_PROT_MASK,PPS_PPS0_PROT_OFF);
-    
+
     if(GETBIT(pps.PPS0,PPS_PPS0_PPS1_MASK))
     {
         mAnalyzer->GetContext()->mISOParams.F = GetFn(GETVAL(pps.PPS1, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF));
         mAnalyzer->GetContext()->mISOParams.D = GetDn(GETVAL(pps.PPS1, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF));
     }
-    
+
     if(GETBIT(pps.PPS0,PPS_PPS0_PPS2_MASK))
     {
         if (pps.PPS2 != 0x00)
         {
             mAnalyzer->GetContext()->mISOParams.SPU.present = true;
         }
-        mAnalyzer->GetContext()->mISOParams.SPU.value = pps.PPS2; 
+        mAnalyzer->GetContext()->mISOParams.SPU.value = pps.PPS2;
     }
-    
+
     if(GETBIT(pps.PPS0,PPS_PPS0_PPS3_MASK))
     {
         // RFU

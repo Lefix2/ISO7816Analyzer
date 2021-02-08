@@ -1,5 +1,7 @@
 #include "ISO7816ProtocolChar.h"
 
+#include "ISO7816Exception.h"
+
 #include <iostream>
 
 ISO7816ProtocolChar::ISO7816ProtocolChar(ISO7816Analyzer* analyzer )
@@ -76,7 +78,7 @@ void ISO7816ProtocolChar::nextState(U8 data)
 
                     params.F = params.Fi;
                     params.D = params.Di;
-                    
+
                     switch (params.default_protocol)
                     {
                         case SC_PROTOCOL_T0:

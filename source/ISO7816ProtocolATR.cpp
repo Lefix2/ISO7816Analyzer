@@ -1,5 +1,7 @@
 #include "ISO7816ProtocolATR.h"
 
+#include "ISO7816Exception.h"
+
 #include <cstring>
 
 #define ATR_T0_HIST_MASK        0x0F
@@ -33,7 +35,7 @@ void ISO7816ProtocolATR::initTransaction (void)
     atr_init(&mAnalyzer->GetContext()->mISOParams.ATR);
     mTDi = 0;
     mNb_T = 0;
-    
+
     delete mNode;
     mNode = new ISO7816NodeATR();
 }
@@ -54,7 +56,7 @@ void ISO7816ProtocolATR::newData(ISO7816Node* node)
     mNode->AddChildNode(node);
 
     switch (mStateATR)
-    {      
+    {
         case stateATR_TS:
             if(data == 0x3B)
                 mAnalyzer->GetContext()->mISOParams.convention = convention_direct;
@@ -123,7 +125,7 @@ void ISO7816ProtocolATR::newData(ISO7816Node* node)
             throw ISO7816ExceptionProtocol("Invalid ATR state");
             break;
     }
-    
+
     nextTDState();
 
     if(mStateATR == stateATR_finished)
@@ -197,7 +199,7 @@ void ISO7816ProtocolATR::nextTDState(void)
                 mStateATR = stateATR_TCK;
                 return;
             }
-            
+
             mStateATR = stateATR_finished;
             return;
             // nobreak
@@ -262,7 +264,7 @@ U8 ISO7816ProtocolATR::GetGlobalN(void)
 		return atr.T[0][ATR_INTERFACE_C].value;
 	else
 		return ATR_DEFAULT_N;
-	
+
 }
 
 U8 ISO7816ProtocolATR::GetGlobalWI(void)

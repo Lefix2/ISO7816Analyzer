@@ -3,10 +3,12 @@
 #include <AnalyzerChannelData.h>
 
 #include "ISO7816ProtocolChar.h"
+#include "ISO7816Exception.h"
+
 
 #include <iostream>
 
-static const bool parity[256] = 
+static const bool parity[256] =
 {
 #   define P2(n) n, n^1, n^1, n
 #   define P4(n) P2(n), P2(n^1), P2(n^1), P2(n)
@@ -19,7 +21,7 @@ void ISO7816Analyzer::newFrame (ISO7816Node* node)
 	// Add node
 	mNodes.push_back(node);
 
-	//we have a byte to save. 
+	//we have a byte to save.
 	Frame frame;
 	frame.mStartingSampleInclusive = node->GetStartSample();
 	frame.mEndingSampleInclusive = node->GetEndSample();
@@ -42,7 +44,7 @@ ISO7816Node* ISO7816Analyzer::GetNodeByFrameId(U64 frameId)
 }
 
 ISO7816Analyzer::ISO7816Analyzer()
-:	Analyzer2(),  
+:	Analyzer2(),
 	mSettings( new ISO7816AnalyzerSettings() ),
 	mSimulationInitialized( false ),
 	mContext(new ISO7816Context())
@@ -58,11 +60,11 @@ ISO7816Analyzer::~ISO7816Analyzer()
 }
 
 void ISO7816Analyzer::Setup()
-{	
+{
 	mSampleRateHz = GetSampleRate();
 
 	mVCC = GetAnalyzerChannelData( mSettings->mChannelVCC);
-	mRST = GetAnalyzerChannelData( mSettings->mChannelRST); 
+	mRST = GetAnalyzerChannelData( mSettings->mChannelRST);
 	mCLK = GetAnalyzerChannelData( mSettings->mChannelCLK);
 	mIO = GetAnalyzerChannelData( mSettings->mChannelIO );
 }
@@ -107,7 +109,7 @@ void ISO7816Analyzer::WorkerThread()
 	ISO7816ProtocolChar* 	protocolChar;
 
 	protocolChar = new ISO7816ProtocolChar(this);
-	
+
 	Setup();
 
 	for( ; ; )

@@ -1,8 +1,7 @@
 #ifndef ISO7816_ANALYZER_SETTINGS
 #define ISO7816_ANALYZER_SETTINGS
 
-#include <AnalyzerSettings.h>
-#include <AnalyzerTypes.h>
+#include <Analyzer.h>
 
 class ISO7816AnalyzerSettings : public AnalyzerSettings
 {

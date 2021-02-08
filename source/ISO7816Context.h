@@ -3,7 +3,6 @@
 
 #include <LogicPublicTypes.h>
 
-#include "ISO7816Exception.h"
 #include "ISO7816Defs.h"
 #include "ISO7816Node.h"
 

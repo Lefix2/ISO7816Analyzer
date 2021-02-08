@@ -1,5 +1,7 @@
 #include "ISO7816ProtocolTPDUT0.h"
 
+#include "ISO7816Exception.h"
+
 #include <iostream>
 
 ISO7816ProtocolTPDUT0::ISO7816ProtocolTPDUT0(ISO7816Analyzer* analyzer)
@@ -16,7 +18,7 @@ void ISO7816ProtocolTPDUT0::initTransaction (void)
 {
     mStateTPDUT0 = stateTPDUT0_HEADER;
     mDataLen = 0;
-    
+
     delete mNode;
     mNode = new ISO7816NodeTPDU();
 }
@@ -69,7 +71,7 @@ void ISO7816ProtocolTPDUT0::nextState(ISO7816NodeChar* charNode)
             }
             return;
             // nobreak
-        
+
         case stateTPDUT0_procedure:
         {
             U8 PROC;
