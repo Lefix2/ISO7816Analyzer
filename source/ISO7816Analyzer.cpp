@@ -27,6 +27,12 @@ void ISO7816Analyzer::newFrame (ISO7816Node* node)
 	frame.mEndingSampleInclusive = node->GetEndSample();
 
 	node->SetNodeId(mResults->AddFrame( frame ));
+
+	#ifdef LOGIC2
+	FrameV2 framev2;
+	mResults->AddFrameV2( framev2, node->GetFrameV2Type(), node->GetStartSample(), node->GetEndSample() );
+	#endif
+
 	mResults->CommitResults();
 }
 

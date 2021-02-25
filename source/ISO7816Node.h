@@ -47,6 +47,7 @@ public:
     ISO7816Node* GetFirstNode(void);
     ISO7816Node* GetLastNode(void);
     virtual nodeLevel_t GetLevel(void);
+    virtual const char* GetFrameV2Type(void);
     virtual void GetDataStr(char* resultString, U32 maxStrLen) = 0;
 
 protected: //vars

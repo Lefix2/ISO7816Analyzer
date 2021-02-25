@@ -58,6 +58,23 @@ nodeLevel_t ISO7816Node::GetLevel(void)
     return mNodeLevel;
 }
 
+const char* ISO7816Node::GetFrameV2Type(void)
+{
+    const char* types[] = {
+        "char",
+        "tpdu",
+        "apdu",
+        "pps",
+        "atr",
+    };
+
+    if (mNodeLevel < nodeLevel_count_or_invalid)
+    {
+        return types[mNodeLevel];
+    }
+    return "data";
+}
+
 ISO7816Node* ISO7816Node::GetNodeAt(S64 index)
 {
     if (index >= 0)
