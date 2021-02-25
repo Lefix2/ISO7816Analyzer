@@ -96,7 +96,7 @@ ISO7816NodeTransaction::~ISO7816NodeTransaction()
 
 void ISO7816NodeTransaction::GetDataStr(char* resultString, U32 maxStrLen)
 {
-    snprintf(resultString, maxStrLen, "ISO7816 Transaction");
+    snprintf(resultString, maxStrLen, "Transaction");
 }
 
 
@@ -112,7 +112,7 @@ ISO7816NodeAPDU::~ISO7816NodeAPDU()
 
 void ISO7816NodeAPDU::GetDataStr(char* resultString, U32 maxStrLen)
 {
-    snprintf(resultString, maxStrLen, "ISO7816 APDU");
+    snprintf(resultString, maxStrLen, "APDU");
 }
 
 
@@ -128,7 +128,7 @@ ISO7816NodeTPDU::~ISO7816NodeTPDU()
 
 void ISO7816NodeTPDU::GetDataStr(char* resultString, U32 maxStrLen)
 {
-    snprintf(resultString, maxStrLen, "ISO7816 TPDU");
+    snprintf(resultString, maxStrLen, "TPDU");
 }
 
 
