@@ -1,6 +1,6 @@
 #include "ISO7816Node.h"
 
-#include <iostream>
+#include "ISO7816Exception.h"
 
 /*
  * ISO7816 Node abstract class implementation
@@ -58,9 +58,14 @@ nodeLevel_t ISO7816Node::GetLevel(void)
     return mNodeLevel;
 }
 
-ISO7816Node* ISO7816Node::GetNodeAt(U64 index)
+ISO7816Node* ISO7816Node::GetNodeAt(S64 index)
 {
-    return mChilds.at(index);
+    if (index >= 0)
+        return mChilds.at(index);
+    else if(-index < (S64)mChilds.size())
+        return mChilds.at((S64)mChilds.size() + index);
+
+    throw ISO7816ExceptionExecution("Bad index");
 }
 
 ISO7816Node* ISO7816Node::GetFirstNode(void)

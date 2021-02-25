@@ -44,7 +44,7 @@ public:
     void AddDescription(const char* str);
 
     void AddChildNode(ISO7816Node* child);
-    ISO7816Node* GetNodeAt(U64 index);
+    ISO7816Node* GetNodeAt(S64 index);
     ISO7816Node* GetFirstNode(void);
     ISO7816Node* GetLastNode(void);
     virtual nodeLevel_t GetLevel(void);
