@@ -253,7 +253,7 @@ U32 ISO7816ProtocolATR::GetGlobalDi(void)
 	if (atr.T[0][ATR_INTERFACE_A].present)
 		return GetFn(GETVAL(atr.T[0][ATR_INTERFACE_A].value, ATR_TA1_D_MASK, ATR_TA1_D_OFF));
 	else
-		return ATR_DEFAULT_F;
+		return ATR_DEFAULT_D;
 }
 
 U8 ISO7816ProtocolATR::GetGlobalN(void)
