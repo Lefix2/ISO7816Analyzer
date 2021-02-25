@@ -50,18 +50,17 @@ ISO7816Analyzer::ISO7816Analyzer()
 	mContext(new ISO7816Context())
 {
 	SetAnalyzerSettings( mSettings.get() );
-	mNodes.clear();
 }
 
 ISO7816Analyzer::~ISO7816Analyzer()
 {
-	mNodes.clear();
 	KillThread();
 }
 
 void ISO7816Analyzer::Setup()
 {
 	mSampleRateHz = GetSampleRate();
+	mNodes.clear();
 
 	mVCC = GetAnalyzerChannelData( mSettings->mChannelVCC);
 	mRST = GetAnalyzerChannelData( mSettings->mChannelRST);
