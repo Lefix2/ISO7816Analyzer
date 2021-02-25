@@ -65,7 +65,7 @@ protected: //vars
 class ISO7816NodeAPDU : public ISO7816Node
 {
 public:
-	ISO7816NodeAPDU(sender_t sender, S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
+	ISO7816NodeAPDU(S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
 	virtual ~ISO7816NodeAPDU();
 
 public:

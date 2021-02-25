@@ -92,8 +92,8 @@ void ISO7816Node::AddDescription(const char* str)
 /*
  * ISO7816 Node for APDU class definition
  */
-ISO7816NodeAPDU::ISO7816NodeAPDU(sender_t sender, S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(nodeLevel_apdu, sender, startSample, endSample, nodeId)
+ISO7816NodeAPDU::ISO7816NodeAPDU(S64 startSample, S64 endSample, U64 nodeId)
+:   ISO7816Node(nodeLevel_apdu, sender_undefined, startSample, endSample, nodeId)
 {}
 
 ISO7816NodeAPDU::~ISO7816NodeAPDU()
