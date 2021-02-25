@@ -39,6 +39,7 @@ protected: // functions
     U8  GetT1SpecificIFS(void);
     U8  GetT1SpecificCWI(void);
     U8  GetT1SpecificBWI(void);
+    bool IsNegociableMode(void);
     void decodeATR(void);
 
 protected: //vars

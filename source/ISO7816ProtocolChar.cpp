@@ -74,12 +74,7 @@ void ISO7816ProtocolChar::nextState(U8 data)
                     mAnalyzer->GetContext()->mState = S_PPS;
                 else
                 {
-                    iso_params_t &params = mAnalyzer->GetContext()->mISOParams;
-
-                    params.F = params.Fi;
-                    params.D = params.Di;
-
-                    switch (params.default_protocol)
+                    switch (mAnalyzer->GetContext()->mISOParams.default_protocol)
                     {
                         case SC_PROTOCOL_T0:
                             mAnalyzer->GetContext()->mState = S_T0;

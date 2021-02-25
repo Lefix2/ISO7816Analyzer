@@ -350,6 +350,15 @@ U8 ISO7816ProtocolATR::GetT1SpecificBWI(void)
 	return ATR_DEFAULT_BWI;
 }
 
+bool ISO7816ProtocolATR::IsNegociableMode(void)
+{
+    atr_t &atr = mAnalyzer->GetContext()->mISOParams.ATR;
+
+    if (atr.T[2][ATR_INTERFACE_A].present)
+        return false;
+    return true;
+}
+
 void ISO7816ProtocolATR::decodeATR(void)
 {
     iso_params_t &params = mAnalyzer->GetContext()->mISOParams;
@@ -401,4 +410,10 @@ void ISO7816ProtocolATR::decodeATR(void)
     params.IFSC = GetT1SpecificIFS();
     params.CWI = GetT1SpecificCWI();
     params.BWI = GetT1SpecificBWI();
+
+    if (!IsNegociableMode())
+    {
+        params.F = params.Fi;
+        params.D = params.Di;
+    }
 }
