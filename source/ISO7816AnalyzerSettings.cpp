@@ -10,15 +10,16 @@ ISO7816AnalyzerSettings::ISO7816AnalyzerSettings()
 	mChannelInterfaceVCC.reset( new AnalyzerSettingInterfaceChannel() );
 	mChannelInterfaceVCC->SetTitleAndTooltip( "VCC", "ISO/IEC-7816 Power line" );
 	mChannelInterfaceVCC->SetChannel( mChannelVCC );
-	
+	mChannelInterfaceVCC->SetSelectionOfNoneIsAllowed(true);
+
 	mChannelInterfaceRST.reset( new AnalyzerSettingInterfaceChannel() );
 	mChannelInterfaceRST->SetTitleAndTooltip( "RST", "ISO/IEC-7816 Reset line" );
 	mChannelInterfaceRST->SetChannel( mChannelRST );
-	
+
 	mChannelInterfaceCLK.reset( new AnalyzerSettingInterfaceChannel() );
 	mChannelInterfaceCLK->SetTitleAndTooltip( "CLK", "ISO/IEC-7816 Clock line" );
 	mChannelInterfaceCLK->SetChannel( mChannelCLK );
-	
+
 	mChannelInterfaceIO.reset( new AnalyzerSettingInterfaceChannel() );
 	mChannelInterfaceIO->SetTitleAndTooltip( "IO", "ISO/IEC-7816 Data line" );
 	mChannelInterfaceIO->SetChannel( mChannelIO );
@@ -54,8 +55,9 @@ bool ISO7816AnalyzerSettings::SetSettingsFromInterfaces()
 			mChannelInterfaceIO->GetChannel()
 	};
 
-	if (all_channels[0] == UNDEFINED_CHANNEL  ||  all_channels[1] == UNDEFINED_CHANNEL ||
-		all_channels[2] == UNDEFINED_CHANNEL  ||  all_channels[3] == UNDEFINED_CHANNEL)
+	if (all_channels[1] == UNDEFINED_CHANNEL ||
+		all_channels[2] == UNDEFINED_CHANNEL ||
+		all_channels[3] == UNDEFINED_CHANNEL)
 	{
 		SetErrorText("Please select inputs for each channels.");
 		return false;

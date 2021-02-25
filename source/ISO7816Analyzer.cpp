@@ -68,7 +68,10 @@ void ISO7816Analyzer::Setup()
 	mSampleRateHz = GetSampleRate();
 	mNodes.clear();
 
-	mVCC = GetAnalyzerChannelData( mSettings->mChannelVCC);
+	if (mSettings->mChannelVCC != UNDEFINED_CHANNEL)
+		mVCC = GetAnalyzerChannelData( mSettings->mChannelVCC);
+	else
+		mVCC = NULL;
 	mRST = GetAnalyzerChannelData( mSettings->mChannelRST);
 	mCLK = GetAnalyzerChannelData( mSettings->mChannelCLK);
 	mIO = GetAnalyzerChannelData( mSettings->mChannelIO );
@@ -76,14 +79,11 @@ void ISO7816Analyzer::Setup()
 
 void ISO7816Analyzer::SyncToSample(U64 to_sample)
 {
-	if (mVCC->GetSampleNumber() < to_sample)
+	if (mVCC != NULL)
 		mVCC->AdvanceToAbsPosition(to_sample);
-	if (mRST->GetSampleNumber() < to_sample)
-		mRST->AdvanceToAbsPosition(to_sample);
-	if (mCLK->GetSampleNumber() < to_sample)
-		mCLK->AdvanceToAbsPosition(to_sample);
-	if (mIO->GetSampleNumber() < to_sample)
-		mIO->AdvanceToAbsPosition(to_sample);
+	mRST->AdvanceToAbsPosition(to_sample);
+	mCLK->AdvanceToAbsPosition(to_sample);
+	mIO->AdvanceToAbsPosition(to_sample);
 }
 
 void ISO7816Analyzer::AdvanceEtu(double etu)
