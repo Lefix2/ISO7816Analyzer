@@ -20,8 +20,6 @@ public:
 	Channel mChannelCLK;
 	Channel mChannelIO;
 
-	double mEtu;
-
 protected:
 	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceVCC;
 	std::unique_ptr< AnalyzerSettingInterfaceChannel >	mChannelInterfaceRST;

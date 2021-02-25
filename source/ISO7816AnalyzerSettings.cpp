@@ -23,8 +23,6 @@ ISO7816AnalyzerSettings::ISO7816AnalyzerSettings()
 	mChannelInterfaceIO->SetTitleAndTooltip( "IO", "ISO/IEC-7816 Data line" );
 	mChannelInterfaceIO->SetChannel( mChannelIO );
 
-	mEtu = 372.0;
-
 	AddInterface( mChannelInterfaceVCC.get() );
 	AddInterface( mChannelInterfaceRST.get() );
 	AddInterface( mChannelInterfaceCLK.get() );

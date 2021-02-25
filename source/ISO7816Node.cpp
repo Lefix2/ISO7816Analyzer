@@ -90,22 +90,6 @@ void ISO7816Node::AddDescription(const char* str)
 
 
 /*
- * ISO7816 Node for Transaction class implementation
- */
-ISO7816NodeTransaction::ISO7816NodeTransaction(S64 startSample, S64 endSample, U64 nodeId)
-:   ISO7816Node(nodeLevel_transaction, sender_undefined, startSample, endSample, nodeId)
-{}
-
-ISO7816NodeTransaction::~ISO7816NodeTransaction()
-{}
-
-void ISO7816NodeTransaction::GetDataStr(char* resultString, U32 maxStrLen)
-{
-    snprintf(resultString, maxStrLen, "Transaction");
-}
-
-
-/*
  * ISO7816 Node for APDU class definition
  */
 ISO7816NodeAPDU::ISO7816NodeAPDU(sender_t sender, S64 startSample, S64 endSample, U64 nodeId)

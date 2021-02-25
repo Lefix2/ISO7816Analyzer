@@ -27,8 +27,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
 
 	if (channel == mSettings->mChannelVCC)
 	{
-		if (node->GetLevel() == nodeLevel_transaction)
-			AddResultString(dataStr);
+		// none
 	}
 	else if (channel == mSettings->mChannelRST)
 	{

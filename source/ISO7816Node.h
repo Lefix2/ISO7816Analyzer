@@ -12,7 +12,6 @@ typedef enum{
     nodeLevel_apdu,
     nodeLevel_pps,
     nodeLevel_atr,
-    nodeLevel_transaction,
     nodeLevel_count_or_invalid,
 }nodeLevel_t;
 
@@ -59,21 +58,6 @@ protected: //vars
     std::string mDescription;
     std::vector<ISO7816Node*> mChilds;
 };
-
-
-/*
- * ISO7816 Node for transaction class definition
- */
-class ISO7816NodeTransaction : public ISO7816Node
-{
-public:
-	ISO7816NodeTransaction(S64 startSample = 0, S64 endSample = 0, U64 nodeId = 0);
-	virtual ~ISO7816NodeTransaction();
-
-public:
-    void GetDataStr(char* resultString, U32 maxStrLen);
-};
-
 
 /*
  * ISO7816 Node for APDU class definition
