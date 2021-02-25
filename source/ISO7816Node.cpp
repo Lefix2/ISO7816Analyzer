@@ -79,7 +79,7 @@ ISO7816Node* ISO7816Node::GetLastNode(void)
 }
 
 void ISO7816Node::AddChildNode(ISO7816Node* child)
-{				
+{
     mChilds.push_back(child);
 }
 

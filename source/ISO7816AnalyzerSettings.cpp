@@ -54,7 +54,7 @@ bool ISO7816AnalyzerSettings::SetSettingsFromInterfaces()
 			mChannelInterfaceIO->GetChannel()
 	};
 
-	if (all_channels[0] == UNDEFINED_CHANNEL  ||  all_channels[1] == UNDEFINED_CHANNEL || 
+	if (all_channels[0] == UNDEFINED_CHANNEL  ||  all_channels[1] == UNDEFINED_CHANNEL ||
 		all_channels[2] == UNDEFINED_CHANNEL  ||  all_channels[3] == UNDEFINED_CHANNEL)
 	{
 		SetErrorText("Please select inputs for each channels.");
@@ -71,7 +71,7 @@ bool ISO7816AnalyzerSettings::SetSettingsFromInterfaces()
 	mChannelRST = all_channels[1];
 	mChannelCLK = all_channels[2];
 	mChannelIO  = all_channels[3];
-	
+
 	ClearChannels();
 	AddChannel( mChannelVCC, "VCC", true );
 	AddChannel( mChannelRST, "RST", true );
