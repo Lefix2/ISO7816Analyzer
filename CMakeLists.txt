@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.13)
-project(iso7816_analyzer)
+project(ISO7816Analyzer)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum supported MacOS version" FORCE)
 
@@ -14,31 +14,33 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(ExternalAnalyzerSDK)
 
 set(SOURCES
-    source/ISO7816Analyzer.h
-    source/ISO7816Analyzer.cpp
-    source/ISO7816AnalyzerSettings.h
-    source/ISO7816AnalyzerSettings.cpp
-    source/ISO7816AnalyzerResults.h
-    source/ISO7816AnalyzerResults.cpp
-    source/ISO7816SimulationDataGenerator.h
-    source/ISO7816SimulationDataGenerator.cpp
-    source/ISO7816Defs.h
-    source/ISO7816Defs.cpp
-    source/ISO7816Exception.h
-    source/ISO7816Context.h
-    source/ISO7816Context.cpp
-    source/ISO7816Node.h
-    source/ISO7816Node.cpp
-    source/ISO7816ProtocolLayer.h
-    source/ISO7816ProtocolLayer.cpp
-    source/ISO7816ProtocolATR.h
-    source/ISO7816ProtocolATR.cpp
-    source/ISO7816ProtocolPPS.h
-    source/ISO7816ProtocolPPS.cpp
-    source/ISO7816ProtocolChar.h
-    source/ISO7816ProtocolChar.cpp
-    source/ISO7816ProtocolTPDUT0.h
-    source/ISO7816ProtocolTPDUT0.cpp
+    src/ISO7816Analyzer.h
+    src/ISO7816Analyzer.cpp
+    src/ISO7816AnalyzerSettings.h
+    src/ISO7816AnalyzerSettings.cpp
+    src/ISO7816AnalyzerResults.h
+    src/ISO7816AnalyzerResults.cpp
+    src/ISO7816SimulationDataGenerator.h
+    src/ISO7816SimulationDataGenerator.cpp
+    src/ISO7816Defs.h
+    src/ISO7816Defs.cpp
+    src/ISO7816Exception.h
+    src/ISO7816Context.h
+    src/ISO7816Context.cpp
+    src/ISO7816Node.h
+    src/ISO7816Node.cpp
+    src/ISO7816ProtocolLayer.h
+    src/ISO7816ProtocolLayer.cpp
+    src/ISO7816ProtocolATR.h
+    src/ISO7816ProtocolATR.cpp
+    src/ISO7816ProtocolPPS.h
+    src/ISO7816ProtocolPPS.cpp
+    src/ISO7816ProtocolChar.h
+    src/ISO7816ProtocolChar.cpp
+    src/ISO7816ProtocolTPDUT0.h
+    src/ISO7816ProtocolTPDUT0.cpp
+    src/ISO7816ProtocolTPDUT1.h
+    src/ISO7816ProtocolTPDUT1.cpp
 )
 
-add_analyzer_plugin(ISO7816Analyzer SOURCES ${SOURCES})
+add_analyzer_plugin(${PROJECT_NAME} SOURCES ${SOURCES})
