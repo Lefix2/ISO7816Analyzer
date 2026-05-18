@@ -105,6 +105,7 @@ void ISO7816Analyzer::SetupResults()
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mChannelIO );
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mChannelCLK );
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mChannelRST );
+	UseFrameV2();
 }
 
 void ISO7816Analyzer::WorkerThread()

@@ -1,5 +1,7 @@
-cmake_minimum_required (VERSION 3.11)
+cmake_minimum_required (VERSION 3.13)
 project(iso7816_analyzer)
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum supported MacOS version" FORCE)
 
 add_definitions( -DLOGIC2 )
 
