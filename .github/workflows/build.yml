@@ -1,4 +1,4 @@
-name: Build Logic 2
+name: Build and Release
 
 on:
   push:
@@ -9,7 +9,10 @@ on:
     branches: [master]
 
 jobs:
-  windows-x86_64:
+
+  # ── Logic 2 ──────────────────────────────────────────────────────────────────
+
+  logic2-windows-x86_64:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v6
@@ -19,10 +22,10 @@ jobs:
         cmake --build ${{github.workspace}}/build --config Release
     - uses: actions/upload-artifact@v7
       with:
-        name: windows_x86_64
+        name: logic2_windows_x86_64
         path: ${{github.workspace}}/build/Analyzers/Release/*.dll
 
-  windows-arm64:
+  logic2-windows-arm64:
     runs-on: windows-11-arm
     steps:
     - uses: actions/checkout@v6
@@ -32,10 +35,10 @@ jobs:
         cmake --build ${{github.workspace}}/build --config Release
     - uses: actions/upload-artifact@v7
       with:
-        name: windows_arm64
+        name: logic2_windows_arm64
         path: ${{github.workspace}}/build/Analyzers/Release/*.dll
 
-  macos:
+  logic2-macos:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6
@@ -47,14 +50,14 @@ jobs:
         cmake --build ${{github.workspace}}/build/arm64
     - uses: actions/upload-artifact@v7
       with:
-        name: macos_x86_64
+        name: logic2_macos_x86_64
         path: ${{github.workspace}}/build/x86_64/Analyzers/*.so
     - uses: actions/upload-artifact@v7
       with:
-        name: macos_arm64
+        name: logic2_macos_arm64
         path: ${{github.workspace}}/build/arm64/Analyzers/*.so
 
-  linux-x86_64:
+  logic2-linux-x86_64:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
@@ -69,10 +72,10 @@ jobs:
           bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=ON && cmake --build build'
     - uses: actions/upload-artifact@v7
       with:
-        name: linux_x86_64
+        name: logic2_linux_x86_64
         path: ${{github.workspace}}/build/Analyzers/*.so
 
-  linux-arm64:
+  logic2-linux-arm64:
     runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@v6
@@ -87,27 +90,124 @@ jobs:
           bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=ON && cmake --build build'
     - uses: actions/upload-artifact@v7
       with:
-        name: linux_arm64
+        name: logic2_linux_arm64
         path: ${{github.workspace}}/build/Analyzers/*.so
 
-  publish:
-    needs: [windows-x86_64, windows-arm64, macos, linux-x86_64, linux-arm64]
-    runs-on: ubuntu-latest
+  # ── Legacy Logic 1.x ─────────────────────────────────────────────────────────
+
+  legacy-windows-x86_64:
+    runs-on: windows-latest
     steps:
-    - name: Download all builds
-      uses: actions/download-artifact@v8
-      with:
-        path: ${{github.workspace}}/artifacts
-    - name: Zip
+    - uses: actions/checkout@v6
+    - name: Build
       run: |
-        cd ${{github.workspace}}/artifacts
-        zip -r ${{github.workspace}}/analyzer.zip .
+        cmake -B ${{github.workspace}}/build -A x64 -DLOGIC2=OFF
+        cmake --build ${{github.workspace}}/build --config Release
     - uses: actions/upload-artifact@v7
       with:
-        name: all-platforms
-        path: ${{github.workspace}}/artifacts/**
-    - name: Create release
-      uses: softprops/action-gh-release@v3
-      if: startsWith(github.ref, 'refs/tags/')
+        name: legacy_windows_x86_64
+        path: ${{github.workspace}}/build/Analyzers/Release/*.dll
+
+  legacy-windows-arm64:
+    runs-on: windows-11-arm
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build
+      run: |
+        cmake -B ${{github.workspace}}/build -A ARM64 -DLOGIC2=OFF
+        cmake --build ${{github.workspace}}/build --config Release
+    - uses: actions/upload-artifact@v7
       with:
-          files: ${{github.workspace}}/analyzer.zip
+        name: legacy_windows_arm64
+        path: ${{github.workspace}}/build/Analyzers/Release/*.dll
+
+  legacy-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build
+      run: |
+        cmake -B ${{github.workspace}}/build/x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64 -DLOGIC2=OFF
+        cmake --build ${{github.workspace}}/build/x86_64
+        cmake -B ${{github.workspace}}/build/arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DLOGIC2=OFF
+        cmake --build ${{github.workspace}}/build/arm64
+    - uses: actions/upload-artifact@v7
+      with:
+        name: legacy_macos_x86_64
+        path: ${{github.workspace}}/build/x86_64/Analyzers/*.so
+    - uses: actions/upload-artifact@v7
+      with:
+        name: legacy_macos_arm64
+        path: ${{github.workspace}}/build/arm64/Analyzers/*.so
+
+  legacy-linux-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Pull builder image
+      run: docker pull ghcr.io/saleae/analyzer-build-image:linux-x86_64
+    - name: Build
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/app \
+          -w /app \
+          ghcr.io/saleae/analyzer-build-image:linux-x86_64 \
+          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=OFF && cmake --build build'
+    - uses: actions/upload-artifact@v7
+      with:
+        name: legacy_linux_x86_64
+        path: ${{github.workspace}}/build/Analyzers/*.so
+
+  legacy-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@v6
+    - name: Pull builder image
+      run: docker pull ghcr.io/saleae/analyzer-build-image:linux-arm64
+    - name: Build
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/app \
+          -w /app \
+          ghcr.io/saleae/analyzer-build-image:linux-arm64 \
+          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=OFF && cmake --build build'
+    - uses: actions/upload-artifact@v7
+      with:
+        name: legacy_linux_arm64
+        path: ${{github.workspace}}/build/Analyzers/*.so
+
+  # ── Release (tags only) ───────────────────────────────────────────────────────
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - logic2-windows-x86_64
+      - logic2-windows-arm64
+      - logic2-macos
+      - logic2-linux-x86_64
+      - logic2-linux-arm64
+      - legacy-windows-x86_64
+      - legacy-windows-arm64
+      - legacy-macos
+      - legacy-linux-x86_64
+      - legacy-linux-arm64
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        path: ${{github.workspace}}/artifacts
+    - name: Zip Logic 2 builds
+      run: |
+        cd ${{github.workspace}}/artifacts
+        zip -r ${{github.workspace}}/analyzer_logic2.zip logic2_*
+    - name: Zip Legacy builds
+      run: |
+        cd ${{github.workspace}}/artifacts
+        zip -r ${{github.workspace}}/analyzer_legacy.zip legacy_*
+    - uses: softprops/action-gh-release@v3
+      with:
+        files: |
+          ${{github.workspace}}/analyzer_logic2.zip
+          ${{github.workspace}}/analyzer_legacy.zip
