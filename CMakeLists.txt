@@ -3,7 +3,10 @@ project(ISO7816Analyzer)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum supported MacOS version" FORCE)
 
-add_definitions( -DLOGIC2 )
+option(LOGIC2 "Build for Logic 2 (OFF = legacy Logic)" ON)
+if(LOGIC2)
+    add_definitions(-DLOGIC2)
+endif()
 
 # enable generation of compile_commands.json, helpful for IDEs to locate include files.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
