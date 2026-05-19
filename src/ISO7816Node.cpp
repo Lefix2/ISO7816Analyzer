@@ -2,6 +2,8 @@
 
 #include "ISO7816Defs.h"
 #include "ISO7816Exception.h"
+#include <AnalyzerHelpers.h>
+#include <cstring>
 
 /*
  * ISO7816 Node abstract class implementation
@@ -53,6 +55,11 @@ sender_t ISO7816Node::GetSender( void )
 nodeLevel_t ISO7816Node::GetLevel( void )
 {
     return mNodeLevel;
+}
+
+void ISO7816Node::GetShortStr( char* buf, U32 maxLen )
+{
+    GetDataStr( buf, maxLen );
 }
 
 ISO7816Node* ISO7816Node::GetNodeAt( S64 index )
@@ -126,6 +133,11 @@ void ISO7816NodeAPDU::GetDataStr( char* resultString, U32 maxStrLen )
         snprintf( resultString, maxStrLen, "APDU" );
 }
 
+void ISO7816NodeAPDU::GetShortStr( char* buf, U32 maxLen )
+{
+    snprintf( buf, maxLen, "APDU" );
+}
+
 
 /*
  * ISO7816 Node for TPDU class definition
@@ -163,6 +175,11 @@ void ISO7816NodeTPDU::GetDataStr( char* resultString, U32 maxStrLen )
     snprintf( resultString, maxStrLen, "TPDU" );
 }
 
+void ISO7816NodeTPDU::GetShortStr( char* buf, U32 maxLen )
+{
+    snprintf( buf, maxLen, "TPDU" );
+}
+
 
 /*
  * ISO7816 Node for PPS class implementation
@@ -178,7 +195,15 @@ ISO7816NodePPS::~ISO7816NodePPS()
 
 void ISO7816NodePPS::GetDataStr( char* resultString, U32 maxStrLen )
 {
-    snprintf( resultString, maxStrLen, "PPS" );
+    if( !mDescription.empty() )
+        snprintf( resultString, maxStrLen, "%s", mDescription.c_str() );
+    else
+        snprintf( resultString, maxStrLen, "PPS" );
+}
+
+void ISO7816NodePPS::GetShortStr( char* buf, U32 maxLen )
+{
+    snprintf( buf, maxLen, "PPS" );
 }
 
 
@@ -196,7 +221,15 @@ ISO7816NodeATR::~ISO7816NodeATR()
 
 void ISO7816NodeATR::GetDataStr( char* resultString, U32 maxStrLen )
 {
-    snprintf( resultString, maxStrLen, "ATR" );
+    if( !mDescription.empty() )
+        snprintf( resultString, maxStrLen, "%s", mDescription.c_str() );
+    else
+        snprintf( resultString, maxStrLen, "ATR" );
+}
+
+void ISO7816NodeATR::GetShortStr( char* buf, U32 maxLen )
+{
+    snprintf( buf, maxLen, "ATR" );
 }
 
 
@@ -212,14 +245,67 @@ ISO7816NodeChar::~ISO7816NodeChar()
 {
 }
 
+static const char* DescPrefix( const char* desc, char* tmp, size_t tmpLen )
+{
+    const char* paren = strchr( desc, '(' );
+    if( paren )
+    {
+        size_t n = ( size_t )( paren - desc );
+        if( n >= tmpLen ) n = tmpLen - 1;
+        memcpy( tmp, desc, n );
+        tmp[ n ] = '\0';
+        return tmp;
+    }
+    return desc;
+}
+
 void ISO7816NodeChar::GetDataStr( char* resultString, U32 maxStrLen )
 {
     if( mDescription.empty() )
     {
         snprintf( resultString, maxStrLen, "0x%02X", mCharVal );
+        return;
+    }
+    const char* desc = mDescription.c_str();
+    const char* paren = strchr( desc, '(' );
+    if( paren )
+    {
+        const char* close = strrchr( desc, ')' );
+        size_t prefixLen = ( size_t )( paren - desc );
+        if( close && close > paren )
+            snprintf( resultString, maxStrLen, "%.*s(0x%02X) %.*s",
+                      ( int )prefixLen, desc, mCharVal,
+                      ( int )( close - paren - 1 ), paren + 1 );
+        else
+            snprintf( resultString, maxStrLen, "%.*s(0x%02X)", ( int )prefixLen, desc, mCharVal );
     }
     else
     {
-        snprintf( resultString, maxStrLen, "%s(0x%02X)", mDescription.c_str(), mCharVal );
+        snprintf( resultString, maxStrLen, "%s(0x%02X)", desc, mCharVal );
     }
+}
+
+void ISO7816NodeChar::GetShortStr( char* buf, U32 maxLen )
+{
+    if( mDescription.empty() )
+    {
+        snprintf( buf, maxLen, "0x%02X", mCharVal );
+        return;
+    }
+    char tmp[ 64 ];
+    snprintf( buf, maxLen, "%s", DescPrefix( mDescription.c_str(), tmp, sizeof( tmp ) ) );
+}
+
+void ISO7816NodeChar::GetMedStr( char* buf, U32 maxLen, DisplayBase displayBase )
+{
+    char valStr[ 32 ];
+    AnalyzerHelpers::GetNumberString( mCharVal, displayBase, 8, valStr, sizeof( valStr ) );
+    if( mDescription.empty() )
+    {
+        snprintf( buf, maxLen, "%s", valStr );
+        return;
+    }
+    char tmp[ 64 ];
+    const char* prefix = DescPrefix( mDescription.c_str(), tmp, sizeof( tmp ) );
+    snprintf( buf, maxLen, "%s(%s)", prefix, valStr );
 }

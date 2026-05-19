@@ -2,11 +2,11 @@ name: Build Logic 2
 
 on:
   push:
-    branches: [master, main]
+    branches: [master]
     tags:
       - '*'
   pull_request:
-    branches: [master, main]
+    branches: [master]
 
 jobs:
   windows-x86_64:

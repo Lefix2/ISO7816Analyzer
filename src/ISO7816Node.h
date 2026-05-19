@@ -50,6 +50,7 @@ class ISO7816Node
     size_t GetChildCount( void ) const;
     virtual nodeLevel_t GetLevel( void );
     virtual void GetDataStr( char* resultString, U32 maxStrLen ) = 0;
+    virtual void GetShortStr( char* buf, U32 maxLen );
 #ifdef LOGIC2
     virtual const char* GetFrameV2Type( void );
 #endif
@@ -74,7 +75,8 @@ class ISO7816NodeAPDU : public ISO7816Node
     virtual ~ISO7816NodeAPDU();
 
   public:
-    void GetDataStr( char* resultString, U32 maxStrLen );
+    void GetDataStr( char* resultString, U32 maxStrLen ) override;
+    void GetShortStr( char* buf, U32 maxLen ) override;
 };
 
 
@@ -88,7 +90,8 @@ class ISO7816NodeTPDU : public ISO7816Node
     virtual ~ISO7816NodeTPDU();
 
   public:
-    void GetDataStr( char* resultString, U32 maxStrLen );
+    void GetDataStr( char* resultString, U32 maxStrLen ) override;
+    void GetShortStr( char* buf, U32 maxLen ) override;
 };
 
 
@@ -102,7 +105,8 @@ class ISO7816NodePPS : public ISO7816Node
     virtual ~ISO7816NodePPS();
 
   public:
-    void GetDataStr( char* resultString, U32 maxStrLen );
+    void GetDataStr( char* resultString, U32 maxStrLen ) override;
+    void GetShortStr( char* buf, U32 maxLen ) override;
 };
 
 
@@ -116,7 +120,8 @@ class ISO7816NodeATR : public ISO7816Node
     virtual ~ISO7816NodeATR();
 
   public:
-    void GetDataStr( char* resultString, U32 maxStrLen );
+    void GetDataStr( char* resultString, U32 maxStrLen ) override;
+    void GetShortStr( char* buf, U32 maxLen ) override;
 };
 
 
@@ -130,7 +135,9 @@ class ISO7816NodeChar : public ISO7816Node
     virtual ~ISO7816NodeChar();
 
   public:
-    void GetDataStr( char* resultString, U32 maxStrLen );
+    void GetDataStr( char* resultString, U32 maxStrLen ) override;
+    void GetShortStr( char* buf, U32 maxLen ) override;
+    void GetMedStr( char* buf, U32 maxLen, DisplayBase displayBase );  // label + value in display_base
 
   public:
     U8 mCharVal;

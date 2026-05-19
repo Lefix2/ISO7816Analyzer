@@ -2,6 +2,7 @@
 
 #include "ISO7816Exception.h"
 
+#include <cstdio>
 #include <cstring>
 
 #define ATR_T0_HIST_MASK 0x0F
@@ -45,7 +46,7 @@ bool ISO7816ProtocolATR::isTransactionComplete( void )
 
 void ISO7816ProtocolATR::newData( ISO7816Node* node )
 {
-    char charDesc[ 8 ];
+    char charDesc[ 32 ];
     ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>( node );
     if( charNode == NULL )
         throw ISO7816ExceptionExecution( "NullPtr cast" );
@@ -68,7 +69,7 @@ void ISO7816ProtocolATR::newData( ISO7816Node* node )
         {
             throw ISO7816ExceptionProtocol( "Bad TS" );
         }
-        charNode->AddDescription( "TS" );
+        charNode->AddDescription( data == 0x3B ? "TS(direct)" : "TS(inverse)" );
         atr.TS = data;
         break;
 
@@ -80,7 +81,16 @@ void ISO7816ProtocolATR::newData( ISO7816Node* node )
         break;
 
     case stateATR_TA:
-        snprintf( charDesc, sizeof( charDesc ), "TA%d", mNb_T );
+        if( mNb_T == 0 )
+        {
+            U16 fi = GetFn( GETVAL( data, ATR_TA1_F_MASK, ATR_TA1_F_OFF ) );
+            U16 di = GetDn( GETVAL( data, ATR_TA1_D_MASK, ATR_TA1_D_OFF ) );
+            snprintf( charDesc, sizeof( charDesc ), "TA1(Fi=%u,Di=%u)", (unsigned)fi, (unsigned)di );
+        }
+        else
+        {
+            snprintf( charDesc, sizeof( charDesc ), "TA%d", mNb_T );
+        }
         charNode->AddDescription( charDesc );
         atr.T[ mNb_T ][ ATR_INTERFACE_A ].present = true;
         atr.T[ mNb_T ][ ATR_INTERFACE_A ].value = data;
@@ -417,4 +427,36 @@ void ISO7816ProtocolATR::decodeATR( void )
         params.F = params.Fi;
         params.D = params.Di;
     }
+
+    // Build ATR node summary description
+    const char* convStr = ( params.convention == convention_direct ) ? "direct" : "inverse";
+
+    // Compute correct Fi/Di from TA1 (params.Di has a known bug using GetFn instead of GetDn)
+    U16 fi = ATR_DEFAULT_F;
+    U16 di = ATR_DEFAULT_D;
+    if( atr.T[ 0 ][ ATR_INTERFACE_A ].present )
+    {
+        U8 ta1 = atr.T[ 0 ][ ATR_INTERFACE_A ].value;
+        fi = GetFn( GETVAL( ta1, ATR_TA1_F_MASK, ATR_TA1_F_OFF ) );
+        di = GetDn( GETVAL( ta1, ATR_TA1_D_MASK, ATR_TA1_D_OFF ) );
+    }
+
+    char desc[ 128 ];
+    if( params.default_protocol == SC_PROTOCOL_T1 )
+    {
+        snprintf( desc, sizeof( desc ), "T=1 %s Fi=%u Di=%u IFSC=%u BWI=%u CWI=%u %s",
+                  convStr, (unsigned)fi, (unsigned)di,
+                  (unsigned)params.IFSC, (unsigned)params.BWI, (unsigned)params.CWI,
+                  params.EDC == SC_EDC_CRC ? "CRC" : "LRC" );
+    }
+    else
+    {
+        if( di > 0 )
+            snprintf( desc, sizeof( desc ), "T=0 %s Fi=%u Di=%u ETU=%u WI=%u",
+                      convStr, (unsigned)fi, (unsigned)di, (unsigned)( fi / di ), (unsigned)params.WI );
+        else
+            snprintf( desc, sizeof( desc ), "T=0 %s Fi=%u Di=%u WI=%u",
+                      convStr, (unsigned)fi, (unsigned)di, (unsigned)params.WI );
+    }
+    mNode->AddDescription( desc );
 }

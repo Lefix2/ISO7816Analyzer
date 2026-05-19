@@ -2,6 +2,8 @@
 
 #include "ISO7816Exception.h"
 
+#include <cstdio>
+
 #define PPS_PPSS_VALUE 0xFF
 
 #define PPS_PPS0_PROT_OFF 0
@@ -64,14 +66,24 @@ void ISO7816ProtocolPPS::newData( ISO7816Node* node )
         break;
 
     case statePPS_PPS0:
-        charNode->AddDescription( "PPS0" );
+    {
+        char desc[ 16 ];
+        snprintf( desc, sizeof( desc ), "PPS0(T=%u)", (unsigned)( data & PPS_PPS0_PROT_MASK ) );
+        charNode->AddDescription( desc );
         pps.PPS0 = data;
         break;
+    }
 
     case statePPS_PPS1:
-        charNode->AddDescription( "PPS1" );
+    {
+        U16 fi = GetFn( GETVAL( data, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF ) );
+        U16 di = GetDn( GETVAL( data, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF ) );
+        char desc[ 32 ];
+        snprintf( desc, sizeof( desc ), "PPS1(Fi=%u,Di=%u)", (unsigned)fi, (unsigned)di );
+        charNode->AddDescription( desc );
         pps.PPS1 = data;
         break;
+    }
 
     case statePPS_PPS2:
         charNode->AddDescription( "PPS2" );
@@ -183,26 +195,45 @@ void ISO7816ProtocolPPS::nextState( void )
 void ISO7816ProtocolPPS::decodePPS( void )
 {
     pps_t& pps = mAnalyzer->GetContext()->mISOParams.PPS;
+    iso_params_t& params = mAnalyzer->GetContext()->mISOParams;
 
-    mAnalyzer->GetContext()->mISOParams.default_protocol = GETVAL( pps.PPS0, PPS_PPS0_PROT_MASK, PPS_PPS0_PROT_OFF );
+    params.default_protocol = GETVAL( pps.PPS0, PPS_PPS0_PROT_MASK, PPS_PPS0_PROT_OFF );
 
     if( GETBIT( pps.PPS0, PPS_PPS0_PPS1_MASK ) )
     {
-        mAnalyzer->GetContext()->mISOParams.F = GetFn( GETVAL( pps.PPS1, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF ) );
-        mAnalyzer->GetContext()->mISOParams.D = GetDn( GETVAL( pps.PPS1, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF ) );
+        params.F = GetFn( GETVAL( pps.PPS1, PPS_PPS1_F_MASK, PPS_PPS1_F_OFF ) );
+        params.D = GetDn( GETVAL( pps.PPS1, PPS_PPS1_D_MASK, PPS_PPS1_D_OFF ) );
     }
 
     if( GETBIT( pps.PPS0, PPS_PPS0_PPS2_MASK ) )
     {
         if( pps.PPS2 != 0x00 )
-        {
-            mAnalyzer->GetContext()->mISOParams.SPU.present = true;
-        }
-        mAnalyzer->GetContext()->mISOParams.SPU.value = pps.PPS2;
+            params.SPU.present = true;
+        params.SPU.value = pps.PPS2;
     }
 
     if( GETBIT( pps.PPS0, PPS_PPS0_PPS3_MASK ) )
     {
         // RFU
     }
+
+    // Build PPS node summary description
+    char desc[ 64 ];
+    if( GETBIT( pps.PPS0, PPS_PPS0_PPS1_MASK ) )
+    {
+        if( params.D > 0 )
+            snprintf( desc, sizeof( desc ), "T=%u Fi=%u Di=%u ETU=%u",
+                      (unsigned)params.default_protocol,
+                      (unsigned)params.F, (unsigned)params.D,
+                      (unsigned)( params.F / params.D ) );
+        else
+            snprintf( desc, sizeof( desc ), "T=%u Fi=%u Di=%u",
+                      (unsigned)params.default_protocol,
+                      (unsigned)params.F, (unsigned)params.D );
+    }
+    else
+    {
+        snprintf( desc, sizeof( desc ), "T=%u", (unsigned)params.default_protocol );
+    }
+    mNode->AddDescription( desc );
 }

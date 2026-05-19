@@ -18,10 +18,7 @@ ISO7816AnalyzerResults::~ISO7816AnalyzerResults()
 void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel, DisplayBase display_base )
 {
     ClearResultStrings();
-    char dataStr[ 256 ];
     ISO7816Node* node = mAnalyzer->GetNodeByFrameId( frame_index );
-
-    node->GetDataStr( dataStr, sizeof( dataStr ) );
 
     if( channel == mSettings->mChannelVCC )
     {
@@ -30,17 +27,41 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
     else if( channel == mSettings->mChannelRST )
     {
         if( node->GetLevel() == nodeLevel_apdu )
-            AddResultString( dataStr );
+        {
+            char longStr[ 256 ], shortStr[ 16 ];
+            node->GetDataStr( longStr, sizeof( longStr ) );
+            node->GetShortStr( shortStr, sizeof( shortStr ) );
+            AddResultString( longStr );
+            AddResultString( shortStr );
+        }
     }
     else if( channel == mSettings->mChannelCLK )
     {
         if( ( node->GetLevel() == nodeLevel_atr ) || ( node->GetLevel() == nodeLevel_pps ) || ( node->GetLevel() == nodeLevel_tpdu ) )
-            AddResultString( dataStr );
+        {
+            char longStr[ 256 ], shortStr[ 16 ];
+            node->GetDataStr( longStr, sizeof( longStr ) );
+            node->GetShortStr( shortStr, sizeof( shortStr ) );
+            AddResultString( longStr );
+            AddResultString( shortStr );
+        }
     }
     else if( channel == mSettings->mChannelIO )
     {
         if( node->GetLevel() == nodeLevel_char )
-            AddResultString( dataStr );
+        {
+            ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>( node );
+            if( charNode )
+            {
+                char longStr[ 256 ], medStr[ 128 ], shortStr[ 64 ];
+                charNode->GetDataStr( longStr, sizeof( longStr ) );
+                charNode->GetMedStr( medStr, sizeof( medStr ), display_base );
+                charNode->GetShortStr( shortStr, sizeof( shortStr ) );
+                AddResultString( longStr );
+                AddResultString( medStr );
+                AddResultString( shortStr );
+            }
+        }
     }
 }
 
