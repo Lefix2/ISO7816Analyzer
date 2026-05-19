@@ -1,49 +1,80 @@
-# Saleae Analyzer ISO/IEC7816
-This plugins is created for the Saleae Logic software
-It is used to decode ISO7816 protocol data from captured waveforms.
+# Saleae ISO/IEC 7816 Analyzer
 
-The libraries required to build this custom analyzer are stored in another git repository, located here:
-[https://github.com/saleae/AnalyzerSDK](https://github.com/saleae/AnalyzerSDK)
+A custom analyzer plugin for [Saleae Logic 2](https://www.saleae.com/downloads/) that decodes ISO/IEC 7816-3 smart card protocol from captured waveforms.
 
-## Windows
-### Build
-To build on Windows, open the visual studio project in the Visual Studio folder, and build. The Visual Studio solution has configurations for 32 bit and 64 bit builds. You will likely need to switch the configuration to 64 bit and build that in order to get the analyzer to load in the Windows software.
+## Features
 
-### Debug
-To debug on Windows, please first review the section titled `Debugging an Analyzer with Visual Studio` in the included `doc/Analyzer SDK Setup.md` document.
+- Decodes **ATR** (Answer To Reset) with full interface byte parsing (TA/TB/TC/TD, historical bytes, TCK)
+- Decodes **PPS** (Protocol Parameter Selection) negotiation
+- Decodes **T=0 TPDU** command/response pairs with INS and SW1/SW2 interpretation
+- Decodes **T=1 TPDU** blocks (I-block, R-block, S-block)
+- Reconstructs **APDU** layer from T=0 and T=1 exchanges
+- Supports **direct** and **inverse** convention
+- Bubble text with multiple zoom levels; respects Logic 2 display base (hex/decimal/binary/ASCII)
+- Logic 2 data table integration (value, label, sender per byte)
 
-To build on Linux or OSX, run the build_analyzer.py script. The compiled libraries can be found in the newly created debug and release folders.
+## Signals
 
-	python build_analyzer.py
+| Signal | Required | Description |
+|--------|----------|-------------|
+| IO     | yes      | Bidirectional data line |
+| CLK    | yes      | Clock |
+| RST    | yes      | Reset |
+| VCC    | no       | Power (optional, for reference) |
 
-Unfortunately, debugging is limited on Windows to using an older copy of the Saleae Logic software that does not support the latest hardware devices. Details are included in the above document.
+## Installation
 
+Download the latest release from the [Releases page](../../releases) and extract the `.zip`. Copy the `.so`/`.dll` file for your platform into the Logic 2 custom analyzers directory:
 
-## Linux
-### Build
-    mkdir build && cd build
-    cmake ../
-    make
-    cp Analyzers/libISO7816Analyzer.so path/to/Logic2/Custom/analyzers -f
+| Platform | Path |
+|----------|------|
+| Linux    | `~/.config/Logic/plugins/` |
+| macOS    | `~/Library/Application Support/Logic/plugins/` |
+| Windows  | `%APPDATA%\Logic\plugins\` |
 
-### Debug
-To debug on Linux:
-Call cmake with debug options:
+Then reload Logic 2.
 
-    cmake -DCMAKE_BUILD_TYPE=Debug ../
+## Build from source
 
-Run logic and identify renderer thread:
+### Prerequisites
 
-    ps ax | grep Logic.*--type=renderer | head -n1 | cut -d " " -f1
+- CMake ≥ 3.13
+- C++11 compiler (GCC, Clang, MSVC)
+- Git (CMake fetches the Saleae SDK automatically)
 
-Verify the thread loaded analyzer:
+### Logic 2
 
-    lsof -p <PID> | grep libISO7816Analyzer.so
+```bash
+cmake -B build -DLOGIC2=ON
+cmake --build build
+```
 
-Attach gdb to the thread:
+Output: `build/Analyzers/libISO7816Analyzer.so` (Linux/macOS) or `build/Analyzers/Release/ISO7816Analyzer.dll` (Windows).
 
-    (gdb) attach <PID>
+### Legacy Logic 1.x
 
-Debug the Analyzer:
+```bash
+cmake -B build -DLOGIC2=OFF
+cmake --build build
+```
 
-    (gdb) break ISO7816Analyzer::WorkerThread
+### Debug build
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DLOGIC2=ON
+cmake --build build
+```
+
+## Debugging with Logic 2 (Linux/macOS)
+
+```bash
+# Find the renderer PID
+ps ax | grep Logic.*--type=renderer | head -n1 | cut -d " " -f1
+
+# Verify the analyzer is loaded
+lsof -p <PID> | grep libISO7816Analyzer.so
+
+# Attach gdb
+gdb -p <PID>
+(gdb) break ISO7816Analyzer::WorkerThread
+```
