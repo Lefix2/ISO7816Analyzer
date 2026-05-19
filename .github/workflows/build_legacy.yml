@@ -8,4 +8,6 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/_build_legacy.yml
+    uses: ./.github/workflows/_build.yml
+    with:
+      logic2: false

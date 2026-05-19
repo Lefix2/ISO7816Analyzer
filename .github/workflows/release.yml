@@ -14,10 +14,14 @@ on:
 jobs:
 
   build-logic2:
-    uses: ./.github/workflows/_build_logic2.yml
+    uses: ./.github/workflows/_build.yml
+    with:
+      logic2: true
 
   build-legacy:
-    uses: ./.github/workflows/_build_legacy.yml
+    uses: ./.github/workflows/_build.yml
+    with:
+      logic2: false
 
   publish:
     needs: [build-logic2, build-legacy]

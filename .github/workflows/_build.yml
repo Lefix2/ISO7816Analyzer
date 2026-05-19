@@ -1,57 +1,74 @@
-name: Build Logic 2 (reusable)
+name: Build (reusable)
 
 on:
   workflow_call:
+    inputs:
+      logic2:
+        description: 'Build for Logic 2 (true) or Legacy Logic (false)'
+        type: boolean
+        default: true
 
 jobs:
 
   windows-x86_64:
     runs-on: windows-latest
+    env:
+      LOGIC2_FLAG: ${{ inputs.logic2 && 'ON' || 'OFF' }}
+      ARTIFACT_PREFIX: ${{ inputs.logic2 && 'logic2' || 'legacy' }}
     steps:
     - uses: actions/checkout@v6
     - name: Build
       run: |
-        cmake -B ${{github.workspace}}/build -A x64 -DLOGIC2=ON
+        cmake -B ${{github.workspace}}/build -A x64 -DLOGIC2=${{ env.LOGIC2_FLAG }}
         cmake --build ${{github.workspace}}/build --config Release
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_windows_x86_64
+        name: ${{ env.ARTIFACT_PREFIX }}_windows_x86_64
         path: ${{github.workspace}}/build/Analyzers/Release/*.dll
 
   windows-arm64:
     runs-on: windows-11-arm
+    env:
+      LOGIC2_FLAG: ${{ inputs.logic2 && 'ON' || 'OFF' }}
+      ARTIFACT_PREFIX: ${{ inputs.logic2 && 'logic2' || 'legacy' }}
     steps:
     - uses: actions/checkout@v6
     - name: Build
       run: |
-        cmake -B ${{github.workspace}}/build -A ARM64 -DLOGIC2=ON
+        cmake -B ${{github.workspace}}/build -A ARM64 -DLOGIC2=${{ env.LOGIC2_FLAG }}
         cmake --build ${{github.workspace}}/build --config Release
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_windows_arm64
+        name: ${{ env.ARTIFACT_PREFIX }}_windows_arm64
         path: ${{github.workspace}}/build/Analyzers/Release/*.dll
 
   macos:
     runs-on: macos-latest
+    env:
+      LOGIC2_FLAG: ${{ inputs.logic2 && 'ON' || 'OFF' }}
+      ARTIFACT_PREFIX: ${{ inputs.logic2 && 'logic2' || 'legacy' }}
     steps:
     - uses: actions/checkout@v6
     - name: Build
       run: |
-        cmake -B ${{github.workspace}}/build/x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64 -DLOGIC2=ON
+        cmake -B ${{github.workspace}}/build/x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64 -DLOGIC2=${{ env.LOGIC2_FLAG }}
         cmake --build ${{github.workspace}}/build/x86_64
-        cmake -B ${{github.workspace}}/build/arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DLOGIC2=ON
+        cmake -B ${{github.workspace}}/build/arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DLOGIC2=${{ env.LOGIC2_FLAG }}
         cmake --build ${{github.workspace}}/build/arm64
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_macos_x86_64
+        name: ${{ env.ARTIFACT_PREFIX }}_macos_x86_64
         path: ${{github.workspace}}/build/x86_64/Analyzers/*.so
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_macos_arm64
+        name: ${{ env.ARTIFACT_PREFIX }}_macos_arm64
         path: ${{github.workspace}}/build/arm64/Analyzers/*.so
 
   linux-x86_64:
     runs-on: ubuntu-latest
+    env:
+      LOGIC2_FLAG: ${{ inputs.logic2 && 'ON' || 'OFF' }}
+      ARTIFACT_PREFIX: ${{ inputs.logic2 && 'logic2' || 'legacy' }}
     steps:
     - uses: actions/checkout@v6
     - name: Pull builder image
@@ -61,15 +78,19 @@ jobs:
         docker run --rm \
           -v ${{ github.workspace }}:/app \
           -w /app \
+          -e LOGIC2_FLAG \
           ghcr.io/saleae/analyzer-build-image:linux-x86_64 \
-          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=ON && cmake --build build'
+          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=$LOGIC2_FLAG && cmake --build build'
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_linux_x86_64
+        name: ${{ env.ARTIFACT_PREFIX }}_linux_x86_64
         path: ${{github.workspace}}/build/Analyzers/*.so
 
   linux-arm64:
     runs-on: ubuntu-24.04-arm
+    env:
+      LOGIC2_FLAG: ${{ inputs.logic2 && 'ON' || 'OFF' }}
+      ARTIFACT_PREFIX: ${{ inputs.logic2 && 'logic2' || 'legacy' }}
     steps:
     - uses: actions/checkout@v6
     - name: Pull builder image
@@ -79,9 +100,10 @@ jobs:
         docker run --rm \
           -v ${{ github.workspace }}:/app \
           -w /app \
+          -e LOGIC2_FLAG \
           ghcr.io/saleae/analyzer-build-image:linux-arm64 \
-          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=ON && cmake --build build'
+          bash -c 'cmake -B build -DCMAKE_BUILD_TYPE=Release -DLOGIC2=$LOGIC2_FLAG && cmake --build build'
     - uses: actions/upload-artifact@v7
       with:
-        name: logic2_linux_arm64
+        name: ${{ env.ARTIFACT_PREFIX }}_linux_arm64
         path: ${{github.workspace}}/build/Analyzers/*.so
