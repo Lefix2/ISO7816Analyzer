@@ -1,6 +1,12 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v1.2.0)'
+        required: true
+        type: string
   push:
     branches: [master]
     tags:
@@ -179,7 +185,7 @@ jobs:
   # ── Release (tags only) ───────────────────────────────────────────────────────
 
   release:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     needs:
       - logic2-windows-x86_64
       - logic2-windows-arm64
@@ -208,6 +214,7 @@ jobs:
         zip -r ${{github.workspace}}/analyzer_legacy.zip legacy_*
     - uses: softprops/action-gh-release@v3
       with:
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.ref_name }}
         files: |
           ${{github.workspace}}/analyzer_logic2.zip
           ${{github.workspace}}/analyzer_legacy.zip
