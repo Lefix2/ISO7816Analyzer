@@ -29,6 +29,34 @@ void ISO7816Analyzer::newFrame( ISO7816Node* node )
 
 #ifdef LOGIC2
     FrameV2 framev2;
+    switch( node->GetLevel() )
+    {
+    case nodeLevel_char:
+    {
+        ISO7816NodeChar* cn = dynamic_cast<ISO7816NodeChar*>( node );
+        if( cn )
+        {
+            char label[ 64 ];
+            cn->GetShortStr( label, sizeof( label ) );
+            framev2.AddByte( "value", cn->mCharVal );
+            framev2.AddString( "label", label );
+            framev2.AddString( "from", cn->GetSender() == sender_card ? "card" : "reader" );
+        }
+        break;
+    }
+    case nodeLevel_tpdu:
+    case nodeLevel_apdu:
+    case nodeLevel_pps:
+    case nodeLevel_atr:
+    {
+        char desc[ 256 ];
+        node->GetDataStr( desc, sizeof( desc ) );
+        framev2.AddString( "description", desc );
+        break;
+    }
+    default:
+        break;
+    }
     mResults->AddFrameV2( framev2, node->GetFrameV2Type(), node->GetStartSample(), node->GetEndSample() );
 #endif
 

@@ -259,11 +259,13 @@ static const char* DescPrefix( const char* desc, char* tmp, size_t tmpLen )
     return desc;
 }
 
-void ISO7816NodeChar::GetDataStr( char* resultString, U32 maxStrLen )
+void ISO7816NodeChar::GetLongStr( char* buf, U32 maxLen, DisplayBase displayBase )
 {
+    char valStr[ 32 ];
+    AnalyzerHelpers::GetNumberString( mCharVal, displayBase, 8, valStr, sizeof( valStr ) );
     if( mDescription.empty() )
     {
-        snprintf( resultString, maxStrLen, "0x%02X", mCharVal );
+        snprintf( buf, maxLen, "%s", valStr );
         return;
     }
     const char* desc = mDescription.c_str();
@@ -273,16 +275,21 @@ void ISO7816NodeChar::GetDataStr( char* resultString, U32 maxStrLen )
         const char* close = strrchr( desc, ')' );
         size_t prefixLen = ( size_t )( paren - desc );
         if( close && close > paren )
-            snprintf( resultString, maxStrLen, "%.*s(0x%02X) %.*s",
-                      ( int )prefixLen, desc, mCharVal,
+            snprintf( buf, maxLen, "%.*s(%s) %.*s",
+                      ( int )prefixLen, desc, valStr,
                       ( int )( close - paren - 1 ), paren + 1 );
         else
-            snprintf( resultString, maxStrLen, "%.*s(0x%02X)", ( int )prefixLen, desc, mCharVal );
+            snprintf( buf, maxLen, "%.*s(%s)", ( int )prefixLen, desc, valStr );
     }
     else
     {
-        snprintf( resultString, maxStrLen, "%s(0x%02X)", desc, mCharVal );
+        snprintf( buf, maxLen, "%s(%s)", desc, valStr );
     }
+}
+
+void ISO7816NodeChar::GetDataStr( char* resultString, U32 maxStrLen )
+{
+    GetLongStr( resultString, maxStrLen, Hexadecimal );
 }
 
 void ISO7816NodeChar::GetShortStr( char* buf, U32 maxLen )

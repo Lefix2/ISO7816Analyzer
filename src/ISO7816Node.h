@@ -137,7 +137,8 @@ class ISO7816NodeChar : public ISO7816Node
   public:
     void GetDataStr( char* resultString, U32 maxStrLen ) override;
     void GetShortStr( char* buf, U32 maxLen ) override;
-    void GetMedStr( char* buf, U32 maxLen, DisplayBase displayBase );  // label + value in display_base
+    void GetMedStr( char* buf, U32 maxLen, DisplayBase displayBase );   // label + value
+    void GetLongStr( char* buf, U32 maxLen, DisplayBase displayBase );  // label + value + params
 
   public:
     U8 mCharVal;

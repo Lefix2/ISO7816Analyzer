@@ -54,7 +54,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
             if( charNode )
             {
                 char longStr[ 256 ], medStr[ 128 ], shortStr[ 64 ];
-                charNode->GetDataStr( longStr, sizeof( longStr ) );
+                charNode->GetLongStr( longStr, sizeof( longStr ), display_base );
                 charNode->GetMedStr( medStr, sizeof( medStr ), display_base );
                 charNode->GetShortStr( shortStr, sizeof( shortStr ) );
                 AddResultString( longStr );
