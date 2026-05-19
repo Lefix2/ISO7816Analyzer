@@ -49,8 +49,10 @@ class ISO7816Node
     ISO7816Node* GetLastNode( void );
     size_t GetChildCount( void ) const;
     virtual nodeLevel_t GetLevel( void );
-    virtual const char* GetFrameV2Type( void );
     virtual void GetDataStr( char* resultString, U32 maxStrLen ) = 0;
+#ifdef LOGIC2
+    virtual const char* GetFrameV2Type( void );
+#endif
 
   protected: // vars
     const nodeLevel_t mNodeLevel;

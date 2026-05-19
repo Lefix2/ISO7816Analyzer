@@ -55,6 +55,17 @@ nodeLevel_t ISO7816Node::GetLevel( void )
     return mNodeLevel;
 }
 
+ISO7816Node* ISO7816Node::GetNodeAt( S64 index )
+{
+    if( index >= 0 )
+        return mChilds.at( index );
+    else if( -index < ( S64 )mChilds.size() )
+        return mChilds.at( ( S64 )mChilds.size() + index );
+
+    throw ISO7816ExceptionExecution( "Bad index" );
+}
+
+#ifdef LOGIC2
 const char* ISO7816Node::GetFrameV2Type( void )
 {
     const char* types[] = {
@@ -67,16 +78,7 @@ const char* ISO7816Node::GetFrameV2Type( void )
     }
     return "data";
 }
-
-ISO7816Node* ISO7816Node::GetNodeAt( S64 index )
-{
-    if( index >= 0 )
-        return mChilds.at( index );
-    else if( -index < ( S64 )mChilds.size() )
-        return mChilds.at( ( S64 )mChilds.size() + index );
-
-    throw ISO7816ExceptionExecution( "Bad index" );
-}
+#endif
 
 ISO7816Node* ISO7816Node::GetFirstNode( void )
 {
