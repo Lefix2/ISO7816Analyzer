@@ -2,7 +2,7 @@
     "version": "0.0.1",
     "apiVersion": "1.0.0",
     "name": "ISO/IEC 7816 HLA",
-    "description": "High Level Analyzer for ISO/IEC 7816 smart card protocol. Reconstructs ATR, PPS, T=0/T=1 TPDU and APDU frames from the char-level LLA output.",
+    "description": "High Level Analyzer for ISO/IEC 7816 smart card protocol. Requires the ISO/IEC-7816 Low Level Analyzer as input. Reconstructs ATR, PPS, T=0/T=1 TPDU and APDU frames from the char-level LLA output. Latest release: https://github.com/Lefix2/ISO7816Analyzer/releases/latest",
     "author": "Lefix2",
     "extensions": {
         "ISO7816 HLA": {

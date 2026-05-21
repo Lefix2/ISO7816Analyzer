@@ -32,7 +32,7 @@ Captured waveform
        ▼
 ┌──────────────────────────────┐
 │  Low Level Analyzer (C++)    │  one frame per byte
-│  • bit sampling & ETU timing │  fields: data, description, from, phase
+│  • bit sampling & ETU timing │  fields: data, sender
 │  • parity check              │
 │  • ATR parsing (convention,  │
 │    Fi/Di, protocol)          │
@@ -56,30 +56,28 @@ Each byte emitted by the LLA carries:
 | Field | Type | Description |
 |-------|------|-------------|
 | `data` | byte | Raw byte value |
-| `description` | string | Field name (e.g. `TS(direct)`, `TA1(Fi=372,Di=1)`, `CLA`, `INS`, `SW1`) |
-| `from` | string | `"card"` or `"reader"` |
-| `phase` | string | `"atr"`, `"pps"`, `"t0"`, or `"t1"` |
-
-> **Note:** `from` and `phase` are set by the ATR/PPS parsers. For T=0/T=1 bytes the HLA determines direction from protocol position.
+| `sender` | string | `"card"` or `"reader"` (reliable for ATR/PPS; HLA infers direction for T=0/T=1) |
 
 ### HLA frame types
 
 | Type | Format | Description |
 |------|--------|-------------|
-| `atr` | `ATR: <params>` | Full ATR parsed (convention, Fi/Di) |
-| `pps` | `PPS [reader/card]: <params>` | One side of PPS exchange |
-| `tpdu` | `TPDU [reader]: <INS> P1 P2 → SW` | Complete T=0 command/response |
+| `atr` | `ATR: <protocol> <convention> Fi=<n> Di=<n> …` | Full ATR (convention, Fi/Di, WI/IFSC/BWI/CWI/EDC) |
+| `pps` | `PPS: reader/card T=<n> Fi=<n> Di=<n> ETU=<n>` | One side of PPS exchange |
+| `tpdu` | `TPDU: reader <INS> CLA=… P1=… P2=… → <SW>` | Complete T=0 command/response (TPDU mode) |
 | `apdu` | `APDU: <INS> <SW>` | Logical APDU (T=0 and T=1) |
-| `t1_block` | `T1 [sender]: I/R/S block` | Individual T=1 block |
-| `t1_apdu` | `T1 APDU: <description>` | Reconstructed APDU from I-block chain |
+| `t1_block` | `T1: reader/card I/R/S block` | Individual T=1 block (TPDU mode only) |
+| `t1_apdu` | `T1 APDU: <INS> <SW>` | Reconstructed APDU from I-block chain (APDU mode) |
 
 ---
 
 ## Installation (Logic 2)
 
+Latest release: **[v1.0.0](https://github.com/Lefix2/ISO7816Analyzer/releases/latest)**
+
 ### Step 1 — Low Level Analyzer
 
-Download `logic2_<platform>.zip` from the [Releases page](../../releases) and copy the `.so` / `.dll` for your platform into the Logic 2 custom analyzers directory:
+Download [`analyzer_logic2.zip`](https://github.com/Lefix2/ISO7816Analyzer/releases/latest/download/analyzer_logic2.zip) and copy the `.so` / `.dll` for your platform into the Logic 2 custom analyzers directory:
 
 | Platform | Path |
 |----------|------|
@@ -91,7 +89,7 @@ Restart Logic 2, then add the **ISO/IEC-7816** analyzer to your session and assi
 
 ### Step 2 — High Level Analyzer
 
-Download `logic2_hla.zip` from the [Releases page](../../releases) and extract `extension.json` and `HighLevelAnalyzer.py` into a dedicated folder (e.g. `ISO7816_HLA/`). In Logic 2:
+Download [`logic2_hla.zip`](https://github.com/Lefix2/ISO7816Analyzer/releases/latest/download/logic2_hla.zip) and extract `extension.json` and `HighLevelAnalyzer.py` into a dedicated folder (e.g. `ISO7816_HLA/`). In Logic 2:
 
 1. Open **Extensions** → **Load existing extension…**
 2. Select the folder containing `extension.json`.
@@ -101,7 +99,7 @@ Download `logic2_hla.zip` from the [Releases page](../../releases) and extract `
 
 ## Installation (Legacy Logic 1.x)
 
-Download `analyzer_legacy.zip` from the [Releases page](../../releases). Copy the `.so` / `.dll` into the Logic custom analyzers directory and restart Logic.
+Download [`analyzer_legacy.zip`](https://github.com/Lefix2/ISO7816Analyzer/releases/latest/download/analyzer_legacy.zip) and copy the `.so` / `.dll` into the Logic custom analyzers directory and restart Logic.
 
 ---
 
@@ -116,9 +114,10 @@ Download `analyzer_legacy.zip` from the [Releases page](../../releases). Copy th
 - **APDU** reconstruction from T=0 and T=1 exchanges
 
 ### Logic 2 extras
-- Logic 2 data table with per-byte `data`, `description`, `from`, `phase` fields
+- Logic 2 data table with per-byte `data` and `sender` fields from the LLA
 - HLA overlay with ATR/PPS/TPDU/APDU frames above the character stream
-- Bubble text on the IO channel at multiple zoom levels (long / medium / short), respects the display base setting (hex / decimal / binary / ASCII)
+- HLA display level setting: **APDU** (one frame per command/response) or **TPDU** (individual T=1 I/R/S blocks)
+- Bubble text on the IO channel shows the raw hex value; respects the display base setting (hex / decimal / binary / ASCII)
 
 ---
 
