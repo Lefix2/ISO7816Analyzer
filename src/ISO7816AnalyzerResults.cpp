@@ -110,21 +110,29 @@ void ISO7816AnalyzerResults::GenerateExportFile( const char* file, DisplayBase d
 
 void ISO7816AnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
+    ( void )display_base;
 #ifdef SUPPORTS_PROTOCOL_SEARCH
-    char dataStr[ 64 ];
     ISO7816Node* node = mAnalyzer->GetNodeByFrameId( frame_index );
-
-    node->GetDataStr( dataStr, sizeof( dataStr ) );
-
-    Frame frame = GetFrame( frame_index );
     ClearTabularText();
 
-    // @TODO for now only display char
     if( node->GetLevel() == nodeLevel_char )
+    {
+#ifdef LOGIC2
+        ISO7816NodeChar* cn = dynamic_cast<ISO7816NodeChar*>( node );
+        if( cn )
+        {
+            char valStr[ 32 ];
+            AnalyzerHelpers::GetNumberString( cn->mCharVal, Hexadecimal, 8, valStr, sizeof( valStr ) );
+            AddTabularText( valStr );
+        }
+#else
+        char dataStr[ 64 ];
+        node->GetDataStr( dataStr, sizeof( dataStr ) );
         AddTabularText( dataStr );
+#endif
+    }
 #else
     ( void )frame_index;
-    ( void )DisplayBase;
 #endif
 }
 
