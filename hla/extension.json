@@ -3,7 +3,7 @@
     "apiVersion": "1.0.0",
     "name": "ISO/IEC 7816 HLA",
     "description": "High Level Analyzer for ISO/IEC 7816 smart card protocol. Reconstructs ATR, PPS, T=0/T=1 TPDU and APDU frames from the char-level LLA output.",
-    "author": "ISO7816Analyzer",
+    "author": "Lefix2",
     "extensions": {
         "ISO7816 HLA": {
             "type": "HighLevelAnalyzer",
