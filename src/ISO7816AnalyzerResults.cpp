@@ -24,6 +24,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
     {
         // none
     }
+#ifndef LOGIC2
     else if( channel == mSettings->mChannelRST )
     {
         if( node->GetLevel() == nodeLevel_apdu )
@@ -46,6 +47,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
             AddResultString( shortStr );
         }
     }
+#endif
     else if( channel == mSettings->mChannelIO )
     {
         if( node->GetLevel() == nodeLevel_char )
@@ -53,6 +55,12 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
             ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>( node );
             if( charNode )
             {
+#ifdef LOGIC2
+                // In Logic2 mode show only the raw value; the HLA provides the description.
+                char valStr[ 32 ];
+                AnalyzerHelpers::GetNumberString( charNode->mCharVal, display_base, 8, valStr, sizeof( valStr ) );
+                AddResultString( valStr );
+#else
                 char longStr[ 256 ], medStr[ 128 ], shortStr[ 64 ];
                 charNode->GetLongStr( longStr, sizeof( longStr ), display_base );
                 charNode->GetMedStr( medStr, sizeof( medStr ), display_base );
@@ -60,6 +68,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
                 AddResultString( longStr );
                 AddResultString( medStr );
                 AddResultString( shortStr );
+#endif
             }
         }
     }
@@ -101,21 +110,29 @@ void ISO7816AnalyzerResults::GenerateExportFile( const char* file, DisplayBase d
 
 void ISO7816AnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
+    ( void )display_base;
 #ifdef SUPPORTS_PROTOCOL_SEARCH
-    char dataStr[ 64 ];
     ISO7816Node* node = mAnalyzer->GetNodeByFrameId( frame_index );
-
-    node->GetDataStr( dataStr, sizeof( dataStr ) );
-
-    Frame frame = GetFrame( frame_index );
     ClearTabularText();
 
-    // @TODO for now only display char
     if( node->GetLevel() == nodeLevel_char )
+    {
+#ifdef LOGIC2
+        ISO7816NodeChar* cn = dynamic_cast<ISO7816NodeChar*>( node );
+        if( cn )
+        {
+            char valStr[ 32 ];
+            AnalyzerHelpers::GetNumberString( cn->mCharVal, Hexadecimal, 8, valStr, sizeof( valStr ) );
+            AddTabularText( valStr );
+        }
+#else
+        char dataStr[ 64 ];
+        node->GetDataStr( dataStr, sizeof( dataStr ) );
         AddTabularText( dataStr );
+#endif
+    }
 #else
     ( void )frame_index;
-    ( void )DisplayBase;
 #endif
 }
 

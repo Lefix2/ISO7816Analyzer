@@ -1,3 +1,4 @@
+#ifndef LOGIC2
 #include "ISO7816ProtocolTPDUT1.h"
 
 #include "ISO7816Defs.h"
@@ -230,3 +231,4 @@ void ISO7816ProtocolTPDUT1::nextState( ISO7816NodeChar* charNode )
         throw ISO7816ExceptionProtocol( "TPDU T1 bad state" );
     }
 }
+#endif // !LOGIC2

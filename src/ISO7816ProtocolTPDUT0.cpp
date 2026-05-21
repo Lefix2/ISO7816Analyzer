@@ -1,3 +1,4 @@
+#ifndef LOGIC2
 #include "ISO7816ProtocolTPDUT0.h"
 
 #include "ISO7816Defs.h"
@@ -185,3 +186,4 @@ void ISO7816ProtocolTPDUT0::nextState( ISO7816NodeChar* charNode )
         // nobreak
     }
 }
+#endif // !LOGIC2

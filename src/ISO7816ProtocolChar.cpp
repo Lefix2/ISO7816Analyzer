@@ -3,9 +3,12 @@
 ISO7816ProtocolChar::ISO7816ProtocolChar( ISO7816Analyzer* analyzer )
     : ISO7816ProtocolLayer( analyzer ),
       mProtocolAtr( analyzer ),
-      mProtocolPPS( analyzer ),
+      mProtocolPPS( analyzer )
+#ifndef LOGIC2
+      ,
       mProtocolTPDUT0( analyzer ),
       mProtocolTPDUT1( analyzer )
+#endif
 {
     initTransaction();
 }
@@ -18,11 +21,12 @@ void ISO7816ProtocolChar::initTransaction( void )
 {
     mAnalyzer->GetContext()->init();
 
-    // Close everything
     mProtocolAtr.initTransaction();
     mProtocolPPS.initTransaction();
+#ifndef LOGIC2
     mProtocolTPDUT0.initTransaction();
     mProtocolTPDUT1.initTransaction();
+#endif
 }
 
 bool ISO7816ProtocolChar::isTransactionComplete( void )
@@ -46,6 +50,7 @@ void ISO7816ProtocolChar::newData( ISO7816Node* node )
         mProtocolPPS.newData( node );
         break;
 
+#ifndef LOGIC2
     case S_T0:
         mProtocolTPDUT0.newData( node );
         break;
@@ -53,6 +58,7 @@ void ISO7816ProtocolChar::newData( ISO7816Node* node )
     case S_T1:
         mProtocolTPDUT1.newData( node );
         break;
+#endif
 
     default:
         // Lost in samples, just display characters
