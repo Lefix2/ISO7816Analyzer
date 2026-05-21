@@ -105,7 +105,7 @@ def _sw_string(sw1, sw2):
 
 class Hla(HighLevelAnalyzer):
 
-    display_level = ChoicesSetting(label='Display level', choices=('APDU', 'TPDU'))
+    display_level = ChoicesSetting(choices=('APDU', 'TPDU'))
 
     result_types = {
         'atr':      {'format': 'ATR: {{data.description}}'},
