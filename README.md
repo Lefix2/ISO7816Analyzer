@@ -73,7 +73,7 @@ Each byte emitted by the LLA carries:
 
 ## Installation (Logic 2)
 
-Latest release: **[v1.0.0](https://github.com/Lefix2/ISO7816Analyzer/releases/latest)**
+Latest release: **[Lefix2/ISO7816Analyzer/releases](https://github.com/Lefix2/ISO7816Analyzer/releases/latest)**
 
 ### Step 1 — Low Level Analyzer
 
@@ -88,6 +88,12 @@ Download [`analyzer_logic2.zip`](https://github.com/Lefix2/ISO7816Analyzer/relea
 Restart Logic 2, then add the **ISO/IEC-7816** analyzer to your session and assign the IO, CLK, and RST channels.
 
 ### Step 2 — High Level Analyzer
+
+#### From Extension Marketplace
+
+Search for ISO/IEC 7816 HLA in Extensions searchbar and install HLA.
+
+#### From local sources
 
 Download [`logic2_hla.zip`](https://github.com/Lefix2/ISO7816Analyzer/releases/latest/download/logic2_hla.zip) and extract `extension.json` and `HighLevelAnalyzer.py` into a dedicated folder (e.g. `ISO7816_HLA/`). In Logic 2:
 
