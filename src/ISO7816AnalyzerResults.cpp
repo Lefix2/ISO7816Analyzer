@@ -55,6 +55,12 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
             ISO7816NodeChar* charNode = dynamic_cast<ISO7816NodeChar*>( node );
             if( charNode )
             {
+#ifdef LOGIC2
+                // In Logic2 mode show only the raw value; the HLA provides the description.
+                char valStr[ 32 ];
+                AnalyzerHelpers::GetNumberString( charNode->mCharVal, display_base, 8, valStr, sizeof( valStr ) );
+                AddResultString( valStr );
+#else
                 char longStr[ 256 ], medStr[ 128 ], shortStr[ 64 ];
                 charNode->GetLongStr( longStr, sizeof( longStr ), display_base );
                 charNode->GetMedStr( medStr, sizeof( medStr ), display_base );
@@ -62,6 +68,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
                 AddResultString( longStr );
                 AddResultString( medStr );
                 AddResultString( shortStr );
+#endif
             }
         }
     }

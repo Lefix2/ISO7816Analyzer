@@ -43,19 +43,20 @@ void ISO7816Analyzer::newFrame( ISO7816Node* node )
     {
         char label[ 64 ];
         cn->GetShortStr( label, sizeof( label ) );
-        framev2.AddByte( "data", cn->mCharVal );
-        framev2.AddString( "description", label );
-        framev2.AddString( "from", cn->GetSender() == sender_card ? "card" : "reader" );
-        const char* phaseStr;
+        const char* senderStr = cn->GetSender() == sender_card ? "card" : "reader";
+        const char* protocolStr;
         switch( mContext->mState )
         {
-        case S_ATR:    phaseStr = "atr"; break;
-        case S_PPS:    phaseStr = "pps"; break;
-        case S_T0:     phaseStr = "t0";  break;
-        case S_T1:     phaseStr = "t1";  break;
-        default:       phaseStr = "unknown"; break;
+        case S_ATR:    protocolStr = "atr"; break;
+        case S_PPS:    protocolStr = "pps"; break;
+        case S_T0:     protocolStr = "t0";  break;
+        case S_T1:     protocolStr = "t1";  break;
+        default:       protocolStr = "unknown"; break;
         }
-        framev2.AddString( "phase", phaseStr );
+        framev2.AddByte( "data", cn->mCharVal );
+        framev2.AddString( "sender", senderStr );
+        framev2.AddString( "protocol", protocolStr );
+        framev2.AddString( "description", label );
     }
     mResults->AddFrameV2( framev2, node->GetFrameV2Type(), node->GetStartSample(), node->GetEndSample() );
 #endif
