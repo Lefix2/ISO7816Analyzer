@@ -157,7 +157,8 @@ class Hla(HighLevelAnalyzer):
         if frame.type != 'char':
             return None
 
-        value = frame.data.get('value', 0)
+        raw = frame.data.get('value', 0)
+        value = raw[0] if isinstance(raw, (bytes, bytearray)) else int(raw)
         label = frame.data.get('label', '')
         phase = frame.data.get('phase', 'unknown')
 
