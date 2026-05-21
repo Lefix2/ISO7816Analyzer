@@ -19,4 +19,6 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: logic2_hla
-        path: hla/
+        path: |
+          extension.json
+          HighLevelAnalyzer.py
