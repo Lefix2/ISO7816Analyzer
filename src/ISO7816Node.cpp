@@ -113,6 +113,7 @@ size_t ISO7816Node::GetChildCount( void ) const
 }
 
 
+#ifndef LOGIC2
 /*
  * ISO7816 Node for APDU class definition
  */
@@ -179,6 +180,7 @@ void ISO7816NodeTPDU::GetShortStr( char* buf, U32 maxLen )
 {
     snprintf( buf, maxLen, "TPDU" );
 }
+#endif // !LOGIC2
 
 
 /*

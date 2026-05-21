@@ -4,8 +4,10 @@
 #include "ISO7816ProtocolLayer.h"
 #include "ISO7816ProtocolATR.h"
 #include "ISO7816ProtocolPPS.h"
+#ifndef LOGIC2
 #include "ISO7816ProtocolTPDUT0.h"
 #include "ISO7816ProtocolTPDUT1.h"
+#endif
 
 class ISO7816ProtocolChar : public ISO7816ProtocolLayer
 {
@@ -23,8 +25,10 @@ class ISO7816ProtocolChar : public ISO7816ProtocolLayer
   protected: // vars
     ISO7816ProtocolATR mProtocolAtr;
     ISO7816ProtocolPPS mProtocolPPS;
+#ifndef LOGIC2
     ISO7816ProtocolTPDUT0 mProtocolTPDUT0;
     ISO7816ProtocolTPDUT1 mProtocolTPDUT1;
+#endif
 };
 
 #endif // ISO7816_PROTOCOLCHAR_H

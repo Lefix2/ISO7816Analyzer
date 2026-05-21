@@ -24,6 +24,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
     {
         // none
     }
+#ifndef LOGIC2
     else if( channel == mSettings->mChannelRST )
     {
         if( node->GetLevel() == nodeLevel_apdu )
@@ -46,6 +47,7 @@ void ISO7816AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& chann
             AddResultString( shortStr );
         }
     }
+#endif
     else if( channel == mSettings->mChannelIO )
     {
         if( node->GetLevel() == nodeLevel_char )

@@ -65,6 +65,7 @@ class ISO7816Node
     std::vector<ISO7816Node*> mChilds;
 };
 
+#ifndef LOGIC2
 /*
  * ISO7816 Node for APDU class definition
  */
@@ -93,6 +94,7 @@ class ISO7816NodeTPDU : public ISO7816Node
     void GetDataStr( char* resultString, U32 maxStrLen ) override;
     void GetShortStr( char* buf, U32 maxLen ) override;
 };
+#endif // !LOGIC2
 
 
 /*
