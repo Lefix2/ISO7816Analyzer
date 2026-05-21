@@ -3,22 +3,16 @@ ISO/IEC 7816 High Level Analyzer
 Processes char-level frames from the ISO7816 Low Level Analyzer and reconstructs
 ATR, PPS, T=0 TPDU/APDU, and T=1 block/APDU frames.
 
-Each input char frame carries (in order):
-  - data        (U8):  raw byte value
-  - sender      (str): "card" or "reader" (reliable for ATR/PPS; HLA determines
-                        direction for T0/T1 from protocol position)
-  - protocol    (str): "atr", "pps", "t0", or "t1"
-  - description (str): field name assigned by C++ LLA (e.g. "TS(direct)", "TA1(Fi=372,Di=1)")
+Each input char frame carries:
+  - data   (U8):  raw byte value
+  - sender (str): "card" or "reader"
 
-Display level setting:
-  - APDU : emit atr + pps + apdu (T=0) + t1_apdu (T=1) + t1_block for R/S only
-  - TPDU : emit atr + pps + tpdu (T=0) + t1_block for every block
+The HLA self-manages the protocol phase state machine.
 """
 
-import re
 from saleae.analyzers import HighLevelAnalyzer, AnalyzerFrame, ChoicesSetting
 
-# ── lookup tables ────────────────────────────────────────────────────────────
+# ── lookup tables ─────────────────────────────────────────────────────────────
 
 _FN_TABLE = [372, 372, 558, 744, 1116, 1488, 1860, 0, 0, 512, 768, 1024, 1536, 2048, 0, 0]
 _DN_TABLE = [0, 1, 2, 4, 8, 16, 32, 64, 12, 20, 0, 0, 0, 0, 0, 0]
@@ -41,13 +35,13 @@ _INS_NAMES = {
 }
 
 
-def _get_fn(fi_idx):
-    v = _FN_TABLE[fi_idx] if 0 <= fi_idx < len(_FN_TABLE) else 0
+def _fn(fi):
+    v = _FN_TABLE[fi] if 0 <= fi < len(_FN_TABLE) else 0
     return v if v > 0 else 372
 
 
-def _get_dn(di_idx):
-    v = _DN_TABLE[di_idx] if 0 <= di_idx < len(_DN_TABLE) else 0
+def _dn(di):
+    v = _DN_TABLE[di] if 0 <= di < len(_DN_TABLE) else 0
     return v if v > 0 else 1
 
 
@@ -101,7 +95,162 @@ def _sw_string(sw1, sw2):
     return f'SW={sw1:#04x}{sw2:#04x}'
 
 
-# ── HLA class ────────────────────────────────────────────────────────────────
+# ── ATR parser ────────────────────────────────────────────────────────────────
+
+class AtrParser:
+    """
+    Byte-by-byte ATR state machine.
+    Feed bytes with push(); done() returns True when all bytes consumed.
+    Call description() for the formatted summary.
+    """
+
+    # States
+    _S_TS = 0
+    _S_T0 = 1
+    _S_TA = 2
+    _S_TB = 3
+    _S_TC = 4
+    _S_TD = 5
+    _S_HIST = 6
+    _S_TCK = 7
+    _S_DONE = 8
+
+    def __init__(self):
+        self._state = self._S_TS
+        self._td_mask = 0       # presence bits from current TDi
+        self._next_mask = 0     # presence bits for next group
+        self._hist_remaining = 0
+        self._tck_needed = False
+
+        # Parsed fields
+        self.convention = ''    # 'direct' or 'inverse'
+        self.protocols = set()  # {0, 1, 14, ...}
+        self.fi = 372
+        self.di = 1
+        self.wi = 10            # default WI (T=0 guard time extension)
+        self.ifsc = 32          # default IFSC (T=1)
+        self.bwi = 4            # default BWI (T=1)
+        self.cwi = 13           # default CWI (T=1)
+        self.edc = 'LRC'        # default EDC (T=1)
+        self._ta_index = 0      # TA1, TA2, TA3... counter
+        self._tb_index = 0
+        self._tc_index = 0
+        self._has_t1 = False
+        self._has_t0 = False
+        self._group = 1         # current interface byte group number
+
+    def push(self, value):
+        if self._state == self._S_TS:
+            if value == 0x3B:
+                self.convention = 'direct'
+            elif value in (0x3F, 0x03):
+                self.convention = 'inverse'
+            self._state = self._S_T0
+
+        elif self._state == self._S_T0:
+            self._hist_remaining = value & 0x0F
+            self._td_mask = value & 0xF0
+            self._ta_index = 1
+            self._tb_index = 1
+            self._tc_index = 1
+            self._group = 1
+            self._state = self._next_state_from_mask(self._td_mask, 'TA')
+
+        elif self._state == self._S_TA:
+            self._process_ta(value)
+            self._state = self._next_after('TA')
+
+        elif self._state == self._S_TB:
+            self._process_tb(value)
+            self._state = self._next_after('TB')
+
+        elif self._state == self._S_TC:
+            self._process_tc(value)
+            self._state = self._next_after('TC')
+
+        elif self._state == self._S_TD:
+            prot = value & 0x0F
+            if prot == 0:
+                self._has_t0 = True
+                self.protocols.add(0)
+            elif prot == 1:
+                self._has_t1 = True
+                self.protocols.add(1)
+            else:
+                self.protocols.add(prot)
+            self._tck_needed = any(p != 0 for p in self.protocols)
+            self._group += 1
+            self._ta_index += 1
+            self._tb_index += 1
+            self._tc_index += 1
+            self._td_mask = value & 0xF0
+            self._state = self._next_state_from_mask(self._td_mask, 'TA')
+
+        elif self._state == self._S_HIST:
+            self._hist_remaining -= 1
+            if self._hist_remaining <= 0:
+                self._state = self._S_TCK if self._tck_needed else self._S_DONE
+
+        elif self._state in (self._S_TCK, self._S_DONE):
+            self._state = self._S_DONE
+
+    def done(self):
+        return self._state == self._S_DONE
+
+    def _next_state_from_mask(self, mask, which):
+        order = ['TA', 'TB', 'TC', 'TD']
+        bits  = [0x10, 0x20, 0x40, 0x80]
+        states = [self._S_TA, self._S_TB, self._S_TC, self._S_TD]
+        idx = order.index(which)
+        for i in range(idx, 4):
+            if mask & bits[i]:
+                return states[i]
+        return self._S_HIST if self._hist_remaining > 0 else (
+               self._S_TCK if self._tck_needed else self._S_DONE)
+
+    def _next_after(self, which):
+        return self._next_state_from_mask(self._td_mask, {
+            'TA': 'TB', 'TB': 'TC', 'TC': 'TD', 'TD': 'TA'
+        }[which])
+
+    def _process_ta(self, value):
+        if self._ta_index == 1:
+            self.fi = _fn((value >> 4) & 0x0F)
+            self.di = _dn(value & 0x0F)
+        elif self._ta_index >= 3 and self._has_t1:
+            self.ifsc = value
+
+    def _process_tb(self, value):
+        if self._tb_index >= 3 and self._has_t1:
+            self.bwi = (value >> 4) & 0x0F
+            self.cwi = value & 0x0F
+
+    def _process_tc(self, value):
+        if self._tc_index == 1:
+            self.wi = value if value != 0 else 10
+        elif self._tc_index >= 3 and self._has_t1:
+            self.edc = 'CRC' if (value & 0x01) else 'LRC'
+
+    def description(self):
+        if self._has_t1:
+            prot = 'T=1'
+        elif self._has_t0 or not self.protocols:
+            prot = 'T=0'
+        else:
+            prot = 'T=' + '+'.join(str(p) for p in sorted(self.protocols))
+
+        etu = self.fi // self.di if self.di > 0 else self.fi
+        parts = [prot, self.convention, f'Fi={self.fi}', f'Di={self.di}', f'ETU={etu}']
+
+        if self._has_t0:
+            parts.append(f'WI={self.wi}')
+        if self._has_t1:
+            parts += [f'IFSC={self.ifsc}', f'BWI={self.bwi}', f'CWI={self.cwi}', self.edc]
+
+        return ' '.join(p for p in parts if p)
+
+
+# ── HLA class ─────────────────────────────────────────────────────────────────
 
 class Hla(HighLevelAnalyzer):
 
@@ -117,12 +266,16 @@ class Hla(HighLevelAnalyzer):
     }
 
     def __init__(self):
-        self._phase = None
+        self._reset_session()
 
-        # ATR accumulation
+    def _reset_session(self):
+        # Phase: 'atr', 'pps', 't0', 't1'
+        self._phase = 'atr'
+
+        # ATR
+        self._atr = AtrParser()
         self._atr_start = None
         self._atr_end = None
-        self._atr_chars = []  # list of (value, label)
 
         # PPS state machine
         self._pps_state = 'PPSS'
@@ -135,7 +288,7 @@ class Hla(HighLevelAnalyzer):
         # T=0 state machine
         self._t0_state = 'HEADER'
         self._t0_start = None
-        self._t0_header = []   # [CLA, INS, P1, P2, P3]
+        self._t0_header = []
         self._t0_data_count = 0
         self._t0_ins = 0
         self._t0_p3 = 0
@@ -148,89 +301,38 @@ class Hla(HighLevelAnalyzer):
         self._t1_pcb = 0
         self._t1_len = 0
         self._t1_data_count = 0
-        self._t1_edc_len = 1   # LRC default
+        self._t1_edc_len = 1
         self._t1_edc_count = 0
-        # APDU chain accumulation
         self._t1_apdu_active = False
         self._t1_apdu_start = None
         self._t1_apdu_data = []
 
-    # ── public entry point ───────────────────────────────────────────────────
+    # ── ATR ──────────────────────────────────────────────────────────────────
 
-    def decode(self, frame: AnalyzerFrame):
-        if frame.type != 'char':
-            return None
-
-        raw = frame.data.get('data', 0)
-        value = raw[0] if isinstance(raw, (bytes, bytearray)) else int(raw)
-        label = frame.data.get('description', '')
-        phase = frame.data.get('protocol', 'unknown')
-
-        results = []
-
-        if phase != self._phase:
-            if self._phase == 'atr' and self._atr_chars:
-                f = self._emit_atr()
-                if f:
-                    results.append(f)
-            self._phase = phase
-
-        if phase == 'atr':
-            self._collect_atr(frame, value, label)
-        elif phase == 'pps':
-            results.extend(self._process_pps(frame, value))
-        elif phase == 't0':
-            results.extend(self._process_t0(frame, value))
-        elif phase == 't1':
-            results.extend(self._process_t1(frame, value))
-
-        return results if results else None
-
-    # ── ATR ─────────────────────────────────────────────────────────────────
-
-    def _collect_atr(self, frame, value, label):
-        if not self._atr_chars:
+    def _process_atr(self, frame, value):
+        if self._atr_start is None:
             self._atr_start = frame.start_time
-            # Reset sub-protocol states for a fresh session
-            self._t1_state = 'NAD'
-            self._t1_block_sender = 'reader'
-            self._t1_apdu_active = False
-            self._t0_state = 'HEADER'
-            self._t0_header = []
-        self._atr_chars.append((value, label))
+
+        self._atr.push(value)
         self._atr_end = frame.end_time
 
-    def _emit_atr(self):
-        if not self._atr_chars or self._atr_start is None:
+        if not self._atr.done():
             return None
 
-        convention = ''
-        fi_di = ''
-        for _v, lbl in self._atr_chars:
-            if 'TS' in lbl:
-                convention = 'direct' if 'direct' in lbl else 'inverse' if 'inverse' in lbl else ''
-            if 'TA1' in lbl:
-                m = re.search(r'Fi=(\d+),Di=(\d+)', lbl)
-                if m:
-                    fi, di = int(m.group(1)), int(m.group(2))
-                    fi_di = f'Fi={fi} Di={di}'
-                    if di > 0:
-                        fi_di += f' ETU={fi // di}'
+        desc = self._atr.description()
+        f = AnalyzerFrame('atr', self._atr_start, self._atr_end, {'description': desc})
 
-        parts = [p for p in [convention, fi_di] if p]
-        if not parts:
-            parts = [f'{len(self._atr_chars)} bytes']
-
-        f = AnalyzerFrame('atr', self._atr_start, self._atr_end,
-                          {'description': ' '.join(parts)})
-        self._atr_chars = []
-        self._atr_start = None
-        self._atr_end = None
+        # Determine next phase from ATR
+        if self._atr._has_t1:
+            self._t1_edc_len = 2 if self._atr.edc == 'CRC' else 1
+        # Phase after ATR is PPS (reader may or may not send; first byte 0xFF = PPSS)
+        # We optimistically move to PPS; if the next byte is not 0xFF we switch to T0/T1
+        self._phase = 'pps_or_data'
         self._pps_state = 'PPSS'
         self._pps_exchange = 0
         return f
 
-    # ── PPS ─────────────────────────────────────────────────────────────────
+    # ── PPS ──────────────────────────────────────────────────────────────────
 
     def _process_pps(self, frame, value):
         if self._pps_state == 'PPSS':
@@ -243,16 +345,25 @@ class Hla(HighLevelAnalyzer):
 
         if self._pps_state == 'PPS0':
             self._pps_pps0 = value
-            self._pps_state = ('PPS1' if value & 0x10 else
-                               'PPS2' if value & 0x20 else
-                               'PPS3' if value & 0x40 else 'PCK')
+            if value & 0x10:
+                self._pps_state = 'PPS1'
+            elif value & 0x20:
+                self._pps_state = 'PPS2'
+            elif value & 0x40:
+                self._pps_state = 'PPS3'
+            else:
+                self._pps_state = 'PCK'
             return []
 
         if self._pps_state == 'PPS1':
-            self._pps_fi = _get_fn((value >> 4) & 0x0F)
-            self._pps_di = _get_dn(value & 0x0F)
-            self._pps_state = ('PPS2' if self._pps_pps0 & 0x20 else
-                               'PPS3' if self._pps_pps0 & 0x40 else 'PCK')
+            self._pps_fi = _fn((value >> 4) & 0x0F)
+            self._pps_di = _dn(value & 0x0F)
+            if self._pps_pps0 & 0x20:
+                self._pps_state = 'PPS2'
+            elif self._pps_pps0 & 0x40:
+                self._pps_state = 'PPS3'
+            else:
+                self._pps_state = 'PCK'
             return []
 
         if self._pps_state == 'PPS2':
@@ -275,15 +386,66 @@ class Hla(HighLevelAnalyzer):
                     parts.append(f'ETU={self._pps_fi // self._pps_di}')
             f = AnalyzerFrame('pps', self._pps_start, frame.end_time,
                               {'description': ' '.join(parts), 'sender': sender})
-            self._pps_exchange = 1 - self._pps_exchange
+            self._pps_exchange += 1
             self._pps_state = 'PPSS'
+            if self._pps_exchange >= 2:
+                # Both sides exchanged; move to data phase
+                if self._atr._has_t1:
+                    self._phase = 't1'
+                else:
+                    self._phase = 't0'
             return [f]
 
         return []
 
-    # ── T=0 ─────────────────────────────────────────────────────────────────
-    # Sender determined by protocol position: reader sends header + command
-    # data; card sends procedure bytes, response data, and SW.
+    # ── public entry point ────────────────────────────────────────────────────
+
+    def decode(self, frame: AnalyzerFrame):
+        if frame.type != 'char':
+            return None
+
+        raw = frame.data.get('data', 0)
+        value = raw[0] if isinstance(raw, (bytes, bytearray)) else int(raw)
+        sender = frame.data.get('sender', 'reader')
+
+        # New ATR detection: card sends TS byte while in data phase
+        if self._phase in ('t0', 't1') and sender == 'card' and value in (0x3B, 0x3F, 0x03):
+            self._reset_session()
+
+        results = []
+
+        if self._phase == 'atr':
+            f = self._process_atr(frame, value)
+            if f:
+                results.append(f)
+
+        elif self._phase == 'pps_or_data':
+            if value == 0xFF:
+                self._phase = 'pps'
+                results.extend(self._process_pps(frame, value))
+            else:
+                # No PPS — go straight to data phase
+                if self._atr._has_t1:
+                    self._phase = 't1'
+                else:
+                    self._phase = 't0'
+                if self._phase == 't0':
+                    results.extend(self._process_t0(frame, value))
+                else:
+                    results.extend(self._process_t1(frame, value))
+
+        elif self._phase == 'pps':
+            results.extend(self._process_pps(frame, value))
+
+        elif self._phase == 't0':
+            results.extend(self._process_t0(frame, value))
+
+        elif self._phase == 't1':
+            results.extend(self._process_t1(frame, value))
+
+        return results if results else None
+
+    # ── T=0 ──────────────────────────────────────────────────────────────────
 
     def _process_t0(self, frame, value):
         state = self._t0_state
@@ -303,7 +465,7 @@ class Hla(HighLevelAnalyzer):
             proc = value
             ins = self._t0_ins
             if proc == 0x60:
-                pass  # NULL — wait, stay in procedure
+                pass
             elif (proc & 0xF0) in (0x60, 0x90):
                 self._t0_sw1 = proc
                 self._t0_state = 'SW2'
@@ -343,11 +505,9 @@ class Hla(HighLevelAnalyzer):
 
         return []
 
-    # ── T=1 ─────────────────────────────────────────────────────────────────
-    # Frames emitted depend on display_level:
-    #   TPDU : t1_block for every block (I/R/S); no t1_apdu
-    #   APDU : t1_apdu when I-block chain completes (M=0); t1_block for R/S only
-    # This ensures no time-overlapping frames in either mode.
+    # ── T=1 ──────────────────────────────────────────────────────────────────
+    # TPDU mode : t1_block for every block (I/R/S)
+    # APDU mode : ZERO t1_block frames — only t1_apdu when I-block chain ends (M=0)
 
     def _process_t1(self, frame, value):
         state = self._t1_state
@@ -379,7 +539,6 @@ class Hla(HighLevelAnalyzer):
                 self._t1_apdu_data.append(value)
             self._t1_data_count += 1
             if self._t1_data_count >= self._t1_len:
-                self._t1_edc_count = 0
                 self._t1_state = 'EDC'
             return []
 
@@ -396,11 +555,12 @@ class Hla(HighLevelAnalyzer):
 
             if is_i:
                 ns = (pcb >> 6) & 1
-                m = (pcb >> 5) & 1
+                m  = (pcb >> 5) & 1
                 if self.display_level == 'TPDU':
                     desc = f'I(NS={ns},M={m}) len={self._t1_len}'
                     results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
                                                  {'description': desc, 'sender': sender}))
+                # In APDU mode: never emit t1_block; only emit t1_apdu when chain ends
                 if m == 0 and self._t1_apdu_active:
                     if self.display_level == 'APDU':
                         results.append(AnalyzerFrame('t1_apdu',
@@ -410,21 +570,23 @@ class Hla(HighLevelAnalyzer):
                     self._t1_apdu_data = []
 
             elif is_r:
-                nr = (pcb >> 4) & 1
-                err = pcb & 0x03
-                desc = f'R(NR={nr})' if err == 0 else f'R(NR={nr},err={err})'
-                results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
-                                             {'description': desc, 'sender': sender}))
-            else:
-                # S-block — emitted in both modes
-                resp = bool(pcb & 0x20)
-                code = pcb & 0x1F
-                names = {0x00: 'RESYNC', 0x01: 'IFS', 0x02: 'ABORT', 0x03: 'WTX'}
-                desc = f'S({names.get(code, f"{code:#04x}")},{"resp" if resp else "req"})'
-                if self._t1_len > 0 and self._t1_apdu_data:
-                    desc += f' val={self._t1_apdu_data[0]:#04x}'
-                results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
-                                             {'description': desc, 'sender': sender}))
+                if self.display_level == 'TPDU':
+                    nr  = (pcb >> 4) & 1
+                    err = pcb & 0x03
+                    desc = f'R(NR={nr})' if err == 0 else f'R(NR={nr},err={err})'
+                    results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
+                                                 {'description': desc, 'sender': sender}))
+
+            else:  # S-block — emitted in TPDU mode only
+                if self.display_level == 'TPDU':
+                    resp = bool(pcb & 0x20)
+                    code = pcb & 0x1F
+                    names = {0x00: 'RESYNC', 0x01: 'IFS', 0x02: 'ABORT', 0x03: 'WTX'}
+                    desc = f'S({names.get(code, f"{code:#04x}")},{"resp" if resp else "req"})'
+                    if self._t1_len > 0 and self._t1_apdu_data:
+                        desc += f' val={self._t1_apdu_data[0]:#04x}'
+                    results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
+                                                 {'description': desc, 'sender': sender}))
 
             self._t1_block_sender = 'card' if sender == 'reader' else 'reader'
             self._t1_state = 'NAD'

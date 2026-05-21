@@ -41,22 +41,8 @@ void ISO7816Analyzer::newFrame( ISO7816Node* node )
     ISO7816NodeChar* cn = dynamic_cast<ISO7816NodeChar*>( node );
     if( cn )
     {
-        char label[ 64 ];
-        cn->GetShortStr( label, sizeof( label ) );
-        const char* senderStr = cn->GetSender() == sender_card ? "card" : "reader";
-        const char* protocolStr;
-        switch( mContext->mState )
-        {
-        case S_ATR:    protocolStr = "atr"; break;
-        case S_PPS:    protocolStr = "pps"; break;
-        case S_T0:     protocolStr = "t0";  break;
-        case S_T1:     protocolStr = "t1";  break;
-        default:       protocolStr = "unknown"; break;
-        }
         framev2.AddByte( "data", cn->mCharVal );
-        framev2.AddString( "sender", senderStr );
-        framev2.AddString( "protocol", protocolStr );
-        framev2.AddString( "description", label );
+        framev2.AddString( "sender", cn->GetSender() == sender_card ? "card" : "reader" );
     }
     mResults->AddFrameV2( framev2, node->GetFrameV2Type(), node->GetStartSample(), node->GetEndSample() );
 #endif
@@ -214,18 +200,24 @@ void ISO7816Analyzer::WorkerThread()
             }
             catch( ISO7816ExceptionProtocol e )
             {
+#ifndef LOGIC2
                 std::cout << "Exception catched while building protocol : " << e.GetDetails() << std::endl;
+#endif
                 continue;
             }
             catch( ISO7816ExceptionExecution e )
             {
+#ifndef LOGIC2
                 std::cout << "Exception catched : " << e.GetDetails() << std::endl;
+#endif
                 exit( 1 );
             }
 
             ReportProgress( mIO->GetSampleNumber() );
         }
+#ifndef LOGIC2
         std::cout << "End of ISO transmission" << std::endl;
+#endif
     }
 }
 
