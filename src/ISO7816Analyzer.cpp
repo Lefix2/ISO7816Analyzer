@@ -43,8 +43,8 @@ void ISO7816Analyzer::newFrame( ISO7816Node* node )
     {
         char label[ 64 ];
         cn->GetShortStr( label, sizeof( label ) );
-        framev2.AddByte( "value", cn->mCharVal );
-        framev2.AddString( "label", label );
+        framev2.AddByte( "data", cn->mCharVal );
+        framev2.AddString( "description", label );
         framev2.AddString( "from", cn->GetSender() == sender_card ? "card" : "reader" );
         const char* phaseStr;
         switch( mContext->mState )
