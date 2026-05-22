@@ -483,10 +483,10 @@ class Hla(HighLevelAnalyzer):
             self._t0_header = []
             if self.display_level == 'TPDU':
                 desc = f'{ins_name} CLA={cla:#04x} P1={p1:#04x} P2={p2:#04x} → {sw_str}'
-                return [AnalyzerFrame('tpdu', start, frame.end_time, {'description': desc, 'sender': 'reader'})]
+                return [AnalyzerFrame('tpdu', start, frame.end_time, {'description': desc, 'sender': 'reader', 'protocol': 'T0'})]
             else:
                 return [AnalyzerFrame('apdu', start, frame.end_time,
-                                      {'description': f'{ins_name} {sw_str}', 'sender': 'reader'})]
+                                      {'description': f'{ins_name} {sw_str}', 'sender': 'reader', 'protocol': 'T0'})]
 
         if state == 'Bytes':
             self._t0_data_count += 1
@@ -556,13 +556,13 @@ class Hla(HighLevelAnalyzer):
                 if self.display_level == 'TPDU':
                     desc = f'I(NS={ns},M={m}) len={self._t1_len}'
                     results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
-                                                 {'description': desc, 'sender': sender}))
+                                                 {'description': desc, 'sender': sender, 'protocol': 'T1'}))
                 if m == 0 and self._t1_apdu_active:
                     if self.display_level == 'APDU':
                         results.append(AnalyzerFrame('apdu',
                                                      self._t1_apdu_start, frame.end_time,
                                                      {'description': self._build_t1_apdu_desc(),
-                                                      'sender': sender}))
+                                                      'sender': sender, 'protocol': 'T1'}))
                     self._t1_apdu_active = False
                     self._t1_apdu_data = []
 
@@ -572,7 +572,7 @@ class Hla(HighLevelAnalyzer):
                     err = pcb & 0x03
                     desc = f'R(NR={nr})' if err == 0 else f'R(NR={nr},err={err})'
                     results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
-                                                 {'description': desc, 'sender': sender}))
+                                                 {'description': desc, 'sender': sender, 'protocol': 'T1'}))
 
             else:  # S-block — emitted in TPDU mode only
                 if self.display_level == 'TPDU':
@@ -583,7 +583,7 @@ class Hla(HighLevelAnalyzer):
                     if self._t1_len > 0 and self._t1_apdu_data:
                         desc += f' val={self._t1_apdu_data[0]:#04x}'
                     results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
-                                                 {'description': desc, 'sender': sender}))
+                                                 {'description': desc, 'sender': sender, 'protocol': 'T1'}))
 
             self._t1_block_sender = 'card' if sender == 'reader' else 'reader'
             self._t1_state = 'NAD'
