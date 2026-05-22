@@ -257,12 +257,10 @@ class Hla(HighLevelAnalyzer):
     display_level = ChoicesSetting(choices=('APDU', 'TPDU'))
 
     result_types = {
-        'atr':      {'format': 'ATR: {{data.description}}'},
-        'pps':      {'format': 'PPS: {{data.description}}'},
-        'tpdu':     {'format': 'TPDU: {{data.description}}'},
-        'apdu':     {'format': 'APDU: {{data.description}}'},
-        't1_block': {'format': 'T1: {{data.description}}'},
-        't1_apdu':  {'format': 'T1 APDU: {{data.description}}'},
+        'atr':  {'format': 'ATR: {{data.description}}'},
+        'pps':  {'format': 'PPS: {{data.description}}'},
+        'tpdu': {'format': 'TPDU: {{data.description}}'},
+        'apdu': {'format': 'APDU: {{data.description}}'},
     }
 
     def __init__(self):
@@ -320,7 +318,7 @@ class Hla(HighLevelAnalyzer):
             return None
 
         desc = self._atr.description()
-        f = AnalyzerFrame('atr', self._atr_start, self._atr_end, {'description': desc})
+        f = AnalyzerFrame('atr', self._atr_start, self._atr_end, {'description': desc, 'sender': 'card'})
 
         # Determine next phase from ATR
         if self._atr._has_t1:
@@ -377,7 +375,7 @@ class Hla(HighLevelAnalyzer):
         if self._pps_state == 'PCK':
             prot = self._pps_pps0 & 0x0F
             direction = 'reader' if self._pps_exchange == 0 else 'card'
-            parts = [direction, f'T={prot}']
+            parts = [f'T={prot}']
             if self._pps_fi is not None:
                 parts.append(f'Fi={self._pps_fi}')
             if self._pps_di is not None:
@@ -385,7 +383,7 @@ class Hla(HighLevelAnalyzer):
                 if self._pps_di > 0 and self._pps_fi:
                     parts.append(f'ETU={self._pps_fi // self._pps_di}')
             f = AnalyzerFrame('pps', self._pps_start, frame.end_time,
-                              {'description': ' '.join(parts)})
+                              {'description': ' '.join(parts), 'sender': direction})
             self._pps_exchange += 1
             self._pps_state = 'PPSS'
             if self._pps_exchange >= 2:
@@ -484,11 +482,11 @@ class Hla(HighLevelAnalyzer):
             self._t0_state = 'HEADER'
             self._t0_header = []
             if self.display_level == 'TPDU':
-                desc = f'reader {ins_name} CLA={cla:#04x} P1={p1:#04x} P2={p2:#04x} → {sw_str}'
-                return [AnalyzerFrame('tpdu', start, frame.end_time, {'description': desc})]
+                desc = f'{ins_name} CLA={cla:#04x} P1={p1:#04x} P2={p2:#04x} → {sw_str}'
+                return [AnalyzerFrame('tpdu', start, frame.end_time, {'description': desc, 'sender': 'reader'})]
             else:
                 return [AnalyzerFrame('apdu', start, frame.end_time,
-                                      {'description': f'{ins_name} {sw_str}'})]
+                                      {'description': f'{ins_name} {sw_str}', 'sender': 'reader'})]
 
         if state == 'Bytes':
             self._t0_data_count += 1
@@ -556,15 +554,15 @@ class Hla(HighLevelAnalyzer):
                 ns = (pcb >> 6) & 1
                 m  = (pcb >> 5) & 1
                 if self.display_level == 'TPDU':
-                    desc = f'{sender} I(NS={ns},M={m}) len={self._t1_len}'
-                    results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
-                                                 {'description': desc}))
-                # In APDU mode: never emit t1_block; only emit t1_apdu when chain ends
+                    desc = f'I(NS={ns},M={m}) len={self._t1_len}'
+                    results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
+                                                 {'description': desc, 'sender': sender}))
                 if m == 0 and self._t1_apdu_active:
                     if self.display_level == 'APDU':
-                        results.append(AnalyzerFrame('t1_apdu',
+                        results.append(AnalyzerFrame('apdu',
                                                      self._t1_apdu_start, frame.end_time,
-                                                     {'description': self._build_t1_apdu_desc()}))
+                                                     {'description': self._build_t1_apdu_desc(),
+                                                      'sender': sender}))
                     self._t1_apdu_active = False
                     self._t1_apdu_data = []
 
@@ -572,20 +570,20 @@ class Hla(HighLevelAnalyzer):
                 if self.display_level == 'TPDU':
                     nr  = (pcb >> 4) & 1
                     err = pcb & 0x03
-                    desc = f'{sender} R(NR={nr})' if err == 0 else f'{sender} R(NR={nr},err={err})'
-                    results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
-                                                 {'description': desc}))
+                    desc = f'R(NR={nr})' if err == 0 else f'R(NR={nr},err={err})'
+                    results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
+                                                 {'description': desc, 'sender': sender}))
 
             else:  # S-block — emitted in TPDU mode only
                 if self.display_level == 'TPDU':
                     resp = bool(pcb & 0x20)
                     code = pcb & 0x1F
                     names = {0x00: 'RESYNC', 0x01: 'IFS', 0x02: 'ABORT', 0x03: 'WTX'}
-                    desc = f'{sender} S({names.get(code, f"{code:#04x}")},{"resp" if resp else "req"})'
+                    desc = f'S({names.get(code, f"{code:#04x}")},{"resp" if resp else "req"})'
                     if self._t1_len > 0 and self._t1_apdu_data:
                         desc += f' val={self._t1_apdu_data[0]:#04x}'
-                    results.append(AnalyzerFrame('t1_block', self._t1_start, frame.end_time,
-                                                 {'description': desc}))
+                    results.append(AnalyzerFrame('tpdu', self._t1_start, frame.end_time,
+                                                 {'description': desc, 'sender': sender}))
 
             self._t1_block_sender = 'card' if sender == 'reader' else 'reader'
             self._t1_state = 'NAD'

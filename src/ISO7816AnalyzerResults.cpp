@@ -83,20 +83,29 @@ void ISO7816AnalyzerResults::GenerateExportFile( const char* file, DisplayBase d
     U64 trigger_sample = mAnalyzer->GetTriggerSample();
     U32 sample_rate = mAnalyzer->GetSampleRate();
 
-    file_stream << "Time [s],Value" << std::endl;
+    file_stream << "Time [s],Sender,Value" << std::endl;
 
     U64 num_frames = GetNumFrames();
     for( U32 i = 0; i < num_frames; i++ )
     {
         Frame frame = GetFrame( i );
+        ISO7816Node* node = mAnalyzer->GetNodeByFrameId( i );
 
-        char time_str[ 128 ];
-        AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
+        if( node && node->GetLevel() == nodeLevel_char )
+        {
+            ISO7816NodeChar* cn = dynamic_cast<ISO7816NodeChar*>( node );
+            if( cn )
+            {
+                char time_str[ 128 ];
+                AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
-        char number_str[ 128 ];
-        AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
+                char number_str[ 128 ];
+                AnalyzerHelpers::GetNumberString( cn->mCharVal, display_base, 8, number_str, 128 );
 
-        file_stream << time_str << "," << number_str << std::endl;
+                const char* sender = cn->GetSender() == sender_card ? "card" : "reader";
+                file_stream << time_str << "," << sender << "," << number_str << std::endl;
+            }
+        }
 
         if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
         {
